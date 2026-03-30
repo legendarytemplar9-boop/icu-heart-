@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b1f3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ICU HEART">
+<title>ICU HEART — Shared</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, push, onValue, set, get, serverTimestamp, off, remove }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  // ============================================================
+  // 🔥 FIREBASE CONFIG
+  // ============================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyAgu08aitT_rMrg9pLBAbSExHSqjm_3Zr0",
+    authDomain: "icu-heart.firebaseapp.com",
+    databaseURL: "https://icu-heart-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "icu-heart",
+    storageBucket: "icu-heart.firebasestorage.app",
+    messagingSenderId: "618254698325",
+    appId: "1:618254698325:web:cf1b767cdee1543d7691dc"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const db   = getDatabase(app);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  // expose to window
+  window._fb = { db, auth, provider, ref, push, onValue, set, get, serverTimestamp, off, remove,
+    signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider };
+  window._firebaseReady = true;
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0b1f3a;--surface:#112240;--surface2:#1a3358;
+  --border:rgba(79,195,247,.18);--blue:#4fc3f7;--teal:#00b4d8;
+  --rose:#ff6b9d;--gold:#ffd166;--green:#06d6a0;--purple:#a29bfe;
+  --white:#fff;--text:#ccd6f6;--muted:#8892b0;
+  --r:16px;--rs:10px;--sh:0 8px 32px rgba(0,0,0,.4);
+}
+html,body{height:100%;width:100%;overflow:hidden;font-family:'Sarabun',sans-serif;
+  background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.hidden{display:none!important}
+button{font-family:'Sarabun',sans-serif;cursor:pointer;border:none;outline:none}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;
+  justify-content:center;background:var(--bg);transition:opacity .5s}
+.splash-bg{position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 40%,rgba(255,107,157,.2) 0%,transparent 60%),
+             radial-gradient(ellipse at 30% 70%,rgba(79,195,247,.1) 0%,transparent 50%)}
+.splash-inner{position:relative;text-align:center}
+.s-heart{font-size:5rem;animation:hb 1.2s ease infinite;display:block;margin-bottom:1rem}
+@keyframes hb{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.s-title{font-family:'Prompt',sans-serif;font-size:3rem;font-weight:700;color:#fff;letter-spacing:3px}
+.s-sub{color:var(--blue);font-size:.95rem;letter-spacing:2px;margin:.4rem 0 1.8rem}
+.s-dots{display:flex;gap:8px;justify-content:center}
+.s-dot{width:8px;height:8px;border-radius:50%;animation:db 1.2s ease infinite}
+.s-dot:nth-child(1){background:var(--rose)}
+.s-dot:nth-child(2){background:var(--blue);animation-delay:.2s}
+.s-dot:nth-child(3){background:var(--gold);animation-delay:.4s}
+@keyframes db{0%,80%,100%{transform:scale(.6);opacity:.5}40%{transform:scale(1.2);opacity:1}}
+
+/* LOGIN */
+#screen-login{position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;padding:1.5rem}
+.login-bg{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 30% 20%,rgba(79,195,247,.12) 0%,transparent 50%),
+             radial-gradient(ellipse at 70% 80%,rgba(255,107,157,.1) 0%,transparent 40%)}
+.login-wrap{position:relative;width:100%;max-width:420px}
+.login-logo{text-align:center;margin-bottom:2rem}
+.logo-heart{font-size:3.2rem;animation:hb 2s ease infinite;display:block}
+.logo-txt{font-family:'Prompt',sans-serif;font-size:2rem;font-weight:700;color:#fff;letter-spacing:3px}
+.logo-txt span{color:var(--rose)}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;
+  padding:1.8rem;box-shadow:var(--sh)}
+.login-card h2{font-family:'Prompt',sans-serif;font-size:1.2rem;margin-bottom:.3rem}
+.login-desc{color:var(--muted);font-size:.88rem;margin-bottom:1.4rem;line-height:1.6}
+.google-btn{width:100%;padding:1rem;border-radius:12px;font-size:.95rem;font-weight:700;
+  background:#fff;color:#333;display:flex;align-items:center;justify-content:center;gap:.7rem;
+  box-shadow:0 4px 16px rgba(0,0,0,.3);transition:all .2s;margin-bottom:.8rem}
+.google-btn:active{transform:scale(.98)}
+.google-icon{font-size:1.3rem}
+.access-denied{background:rgba(255,107,157,.08);border:1px solid rgba(255,107,157,.25);
+  border-radius:12px;padding:1rem;font-size:.85rem;color:var(--rose);text-align:center;
+  margin-top:.8rem;display:none}
+
+/* ACCESS DENIED SCREEN */
+#screen-denied{position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;padding:1.5rem}
+.denied-card{background:var(--surface);border:1px solid rgba(255,107,157,.3);
+  border-radius:24px;padding:2rem;width:100%;max-width:400px;text-align:center}
+.denied-icon{font-size:3rem;margin-bottom:1rem}
+.denied-title{font-family:'Prompt',sans-serif;font-size:1.2rem;color:var(--rose);margin-bottom:.5rem}
+.denied-sub{font-size:.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6}
+.denied-email{background:rgba(255,107,157,.08);border-radius:8px;padding:.5rem .8rem;
+  font-size:.8rem;color:var(--rose);font-family:monospace;word-break:break-all;margin-bottom:1.2rem}
+
+/* APP */
+#screen-app{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:.5rem;padding:.8rem 1rem;
+  background:rgba(11,31,58,.96);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+  padding-top:max(.8rem,env(safe-area-inset-top))}
+.tb-back{width:36px;height:36px;border-radius:10px;background:var(--surface2);
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  color:var(--text);flex-shrink:0}
+.tb-center{flex:1;text-align:center}
+.tb-title{font-family:'Prompt',sans-serif;font-size:1rem;font-weight:600;color:#fff}
+.tb-sub{font-size:.7rem;color:var(--muted)}
+.online-pill{display:flex;align-items:center;gap:.35rem;
+  background:rgba(6,214,160,.12);border:1px solid rgba(6,214,160,.25);
+  border-radius:20px;padding:2px 8px;font-size:.65rem;color:var(--green);margin-top:2px}
+.online-dot{width:6px;height:6px;border-radius:50%;background:var(--green);
+  animation:pulse-dot 2s ease infinite}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(6,214,160,.5)}50%{box-shadow:0 0 0 5px rgba(6,214,160,0)}}
+.tb-avatar{width:36px;height:36px;border-radius:50%;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;
+  background:linear-gradient(135deg,var(--rose),#ff4081);cursor:pointer}
+.tb-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+
+.page-container{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:80px}
+.page{display:none;padding:1rem;animation:fi .3s ease}
+.page.active{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;display:flex;
+  background:rgba(11,31,58,.97);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;padding:.6rem .3rem;border:none;background:transparent;
+  display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;transition:all .2s}
+.nav-btn.active .nav-icon{transform:scale(1.15)}
+.nav-btn.active .nav-lbl{color:var(--blue)}
+.nav-icon{font-size:1.35rem;transition:transform .2s}
+.nav-lbl{font-size:.63rem;color:var(--muted)}
+.nav-badge{position:absolute;top:4px;right:10px;background:var(--rose);color:#fff;
+  border-radius:10px;padding:1px 5px;font-size:.58rem;font-weight:700}
+
+/* SHARED COMPONENTS */
+.sec-title{font-family:'Prompt',sans-serif;font-size:.9rem;font-weight:600;
+  color:#fff;margin:1.2rem 0 .7rem;display:flex;align-items:center;gap:.4rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;margin-bottom:.8rem}
+.mod-header{display:flex;align-items:center;gap:.9rem;border-left:4px solid var(--mc,var(--blue));
+  background:var(--surface2);border-radius:var(--r);padding:1.1rem;margin-bottom:1rem}
+.mh-icon{font-size:2.2rem}
+.mh-title{font-family:'Prompt',sans-serif;font-size:1.15rem;font-weight:600;color:#fff}
+.mh-sub{font-size:.76rem;color:var(--muted)}
+.submit-btn{width:100%;padding:.95rem;border-radius:var(--r);
+  background:linear-gradient(135deg,var(--blue),var(--teal));color:#fff;
+  font-size:.95rem;font-weight:700;box-shadow:0 6px 20px rgba(79,195,247,.3);
+  transition:all .2s;margin-top:.8rem}
+.submit-btn:active{transform:scale(.98);box-shadow:none}
+.live-item{display:flex;gap:.8rem;padding:.8rem;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--rs);margin-bottom:.5rem;animation:fi .4s ease}
+.live-ava{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:1.2rem;flex-shrink:0}
+.live-body{flex:1;min-width:0}
+.live-who{font-size:.7rem;color:var(--muted);margin-bottom:.2rem}
+.live-who strong{color:var(--text)}
+.live-text{font-size:.86rem;color:#fff;line-height:1.45}
+.live-time{font-size:.66rem;color:var(--muted);margin-top:.3rem}
+.form-label{font-size:.8rem;color:var(--muted);margin-bottom:.4rem;display:block}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:.72rem 1rem;color:#fff;font-size:.9rem;
+  font-family:'Sarabun',sans-serif;outline:none}
+.form-input:focus{border-color:var(--blue)}
+textarea.form-input{resize:none}
+.chk-row{display:flex;align-items:center;gap:.6rem;padding:.5rem;
+  background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:.4rem;cursor:pointer}
+.chk-row input{accent-color:var(--blue);width:17px;height:17px}
+.chk-row span{font-size:.86rem;color:var(--text)}
+.pain-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:.4rem}
+.pain-btn{border-radius:9px;border:2px solid transparent;aspect-ratio:1;
+  font-size:.82rem;font-weight:700;color:rgba(0,0,0,.75);transition:all .15s;cursor:pointer}
+.pain-btn.sel{border-color:#fff;transform:scale(1.18);box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.need-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin-bottom:1rem}
+.need-btn{background:var(--surface);border:2px solid var(--border);border-radius:var(--r);
+  padding:.9rem .4rem;text-align:center;transition:all .15s;color:var(--text)}
+.need-btn:active{transform:scale(.92);background:rgba(255,107,157,.12);border-color:var(--rose)}
+.need-emoji{font-size:2rem;margin-bottom:.25rem}
+.need-lbl{font-size:.75rem}
+.tab-bar{display:flex;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:4px;gap:4px;margin-bottom:1rem}
+.tab-btn{flex:1;padding:.58rem .3rem;border-radius:7px;border:none;
+  background:transparent;font-size:.73rem;color:var(--muted);transition:all .2s;font-family:'Sarabun',sans-serif}
+.tab-btn.active{background:var(--surface2);color:#fff}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.mission-item{display:flex;gap:.8rem;background:var(--surface);border:1px solid var(--border);
+  border-left:3px solid var(--border);border-radius:var(--rs);padding:.85rem;margin-bottom:.6rem;transition:all .2s}
+.mission-item.done{border-left-color:var(--green);background:rgba(6,214,160,.04)}
+.m-check{width:28px;height:28px;border-radius:7px;border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .2s}
+.mission-item.done .m-check{background:var(--green);border-color:var(--green);color:#fff;font-size:.9rem}
+.m-title{font-size:.88rem;font-weight:600;color:#fff;margin-bottom:2px}
+.m-desc{font-size:.76rem;color:var(--muted);line-height:1.4}
+.ms-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.65rem}
+.ms-bar{height:6px;background:rgba(255,255,255,.08);border-radius:100px;overflow:hidden;margin:.5rem 0}
+.ms-fill{height:100%;border-radius:100px;transition:width 1.5s ease}
+.stai-wrap{text-align:center;padding:1rem}
+.stai-num{font-family:'Prompt',sans-serif;font-size:3.5rem;font-weight:700;color:#fff}
+.stai-lbl{font-size:.9rem;font-weight:600;margin-top:.2rem}
+.stai-sl{width:100%;accent-color:var(--blue);margin:.8rem 0}
+.cam-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:.85rem;margin-bottom:.55rem}
+.cam-q{font-size:.85rem;color:var(--text);margin-bottom:.55rem}
+.cam-row{display:flex;gap:.5rem}
+.cam-y,.cam-n{flex:1;padding:.48rem;border-radius:8px;border:1px solid var(--border);font-size:.82rem;transition:all .2s;font-family:'Sarabun',sans-serif}
+.cam-y{background:rgba(6,214,160,.08);color:var(--green)}
+.cam-n{background:rgba(255,107,157,.08);color:var(--rose)}
+.cam-y.sel{background:var(--green);color:#fff}
+.cam-n.sel{background:var(--rose);color:#fff}
+.pt-card{background:linear-gradient(135deg,#1a3a5c,#0d2a44);border:1px solid rgba(79,195,247,.25);
+  border-radius:var(--r);padding:1.2rem;margin-bottom:1rem}
+.pt-vitals{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin:.8rem 0}
+.vt-val{font-family:'Prompt',sans-serif;font-size:1rem;font-weight:700}
+.vt-lbl{font-size:.62rem;color:var(--muted)}
+.pulse-dot{width:9px;height:9px;border-radius:50%;background:var(--green);animation:pulse-dot 2s ease infinite}
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);
+  background:rgba(6,214,160,.95);color:#fff;border-radius:30px;padding:.65rem 1.4rem;
+  font-size:.86rem;font-weight:600;z-index:9999;animation:toastIn .3s ease;white-space:nowrap}
+.toast.err{background:rgba(255,107,157,.95)}
+@keyframes toastIn{from{transform:translateX(-50%) translateY(18px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+.modal-ov{position:fixed;inset:0;z-index:8888;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  display:flex;align-items:flex-end;justify-content:center;padding:1rem}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:24px 24px 0 0;
+  width:100%;max-width:500px;padding:1.5rem;animation:modalUp .3s ease;max-height:85vh;overflow-y:auto}
+@keyframes modalUp{from{transform:translateY(50px);opacity:0}to{transform:none;opacity:1}}
+.modal-close{width:100%;padding:.88rem;border-radius:12px;background:var(--surface2);
+  border:1px solid var(--border);color:var(--muted);font-size:.92rem;margin-top:.8rem;font-family:'Sarabun',sans-serif}
+.spinner{width:32px;height:32px;border:3px solid rgba(79,195,247,.2);
+  border-top:3px solid var(--blue);border-radius:50%;animation:spin 1s linear infinite;margin:2rem auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ADMIN PANEL */
+.member-row{display:flex;align-items:center;gap:.8rem;padding:.8rem;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:.5rem}
+.member-photo{width:38px;height:38px;border-radius:50%;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;
+  background:var(--surface2)}
+.member-photo img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.member-info{flex:1;min-width:0}
+.member-name{font-size:.88rem;color:#fff;font-weight:500}
+.member-email{font-size:.72rem;color:var(--muted);word-break:break-all}
+.member-role{font-size:.65rem;padding:2px 7px;border-radius:20px;margin-top:3px;display:inline-block}
+.role-admin{background:rgba(255,209,102,.15);color:var(--gold)}
+.role-member{background:rgba(79,195,247,.12);color:var(--blue)}
+.del-btn{width:32px;height:32px;border-radius:8px;background:rgba(255,107,157,.1);
+  border:1px solid rgba(255,107,157,.25);color:var(--rose);font-size:.9rem;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.add-member-form{background:var(--surface);border:1px solid rgba(79,195,247,.2);
+  border-radius:var(--r);padding:1.2rem;margin-bottom:1rem}
+.input-row{display:flex;gap:.5rem}
+.pending-row{display:flex;align-items:center;gap:.7rem;padding:.7rem;
+  background:rgba(255,209,102,.06);border:1px solid rgba(255,209,102,.2);
+  border-radius:var(--rs);margin-bottom:.5rem}
+.approve-btn{padding:4px 12px;border-radius:8px;background:rgba(6,214,160,.15);
+  border:1px solid rgba(6,214,160,.3);color:var(--green);font-size:.78rem;font-family:'Sarabun',sans-serif}
+.reject-btn{padding:4px 12px;border-radius:8px;background:rgba(255,107,157,.1);
+  border:1px solid rgba(255,107,157,.25);color:var(--rose);font-size:.78rem;font-family:'Sarabun',sans-serif}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-bg"></div>
+  <div class="splash-inner">
+    <span class="s-heart">💙</span>
+    <div class="s-title">ICU HEART</div>
+    <div class="s-sub">Humanized Care • Shared</div>
+    <div class="s-dots">
+      <div class="s-dot"></div><div class="s-dot"></div><div class="s-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="screen-login" class="hidden">
+  <div class="login-bg"></div>
+  <div class="login-wrap">
+    <div class="login-logo">
+      <span class="logo-heart">❤️</span>
+      <div class="logo-txt">ICU <span>HEART</span></div>
+    </div>
+    <div class="login-card">
+      <h2>เข้าสู่ระบบ</h2>
+      <p class="login-desc">ลงชื่อด้วย Google account<br>เพื่อเข้าใช้งานระบบ ICU HEART</p>
+      <button class="google-btn" onclick="doGoogleLogin()">
+        <span class="google-icon">🔵</span>
+        <span>Sign in with Google</span>
+      </button>
+      <div class="access-denied" id="login-error">
+        ❌ อีเมลนี้ไม่มีสิทธิ์เข้าใช้งาน<br>
+        <small>กรุณาติดต่อ Admin เพื่อขอสิทธิ์</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ACCESS DENIED -->
+<div id="screen-denied" class="hidden">
+  <div class="denied-card">
+    <div class="denied-icon">🔒</div>
+    <div class="denied-title">ไม่มีสิทธิ์เข้าใช้งาน</div>
+    <div class="denied-sub">อีเมลของคุณยังไม่ได้รับอนุญาต<br>กรุณาติดต่อ Admin เพื่อขอสิทธิ์</div>
+    <div class="denied-email" id="denied-email-show"></div>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">
+      Admin จะเพิ่มอีเมลของคุณในระบบ<br>แล้วลอง Login ใหม่อีกครั้ง
+    </p>
+    <button onclick="doSignOut()" style="width:100%;padding:.85rem;border-radius:12px;
+      background:rgba(255,107,157,.1);border:1px solid rgba(255,107,157,.25);
+      color:var(--rose);font-size:.9rem;cursor:pointer;font-family:'Sarabun',sans-serif">
+      🚪 ออกจากระบบ
+    </button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="screen-app" class="hidden">
+  <div class="topbar">
+    <button class="tb-back hidden" id="back-btn" onclick="goBack()">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="tb-center">
+      <div class="tb-title" id="tb-title">ICU HEART</div>
+      <div class="online-pill">
+        <div class="online-dot"></div>
+        <span id="online-count">กำลังเชื่อมต่อ...</span>
+      </div>
+    </div>
+    <div class="tb-avatar" id="tb-avatar" onclick="showProfile()">👩‍⚕️</div>
+  </div>
+
+  <div class="page-container" id="pages">
+
+    <!-- HOME -->
+    <div class="page active" id="pg-home">
+      <div class="card" style="margin-bottom:1rem;background:linear-gradient(135deg,#1a3358,#112240)">
+        <div style="font-size:.8rem;color:var(--muted)">สวัสดีค่ะ 🙏</div>
+        <div style="font-family:'Prompt',sans-serif;font-size:1.25rem;font-weight:600;color:#fff" id="home-name">—</div>
+        <div style="font-size:.78rem;color:var(--blue)" id="home-role-lbl">—</div>
+      </div>
+      <div class="pt-card">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.7rem">
+          <div class="pulse-dot"></div>
+          <div style="font-size:.75rem;color:var(--muted);flex:1">ผู้ป่วยปัจจุบัน</div>
+          <div style="background:rgba(79,195,247,.12);border-radius:6px;padding:2px 8px;font-size:.72rem;color:var(--blue)">Bed 3</div>
+        </div>
+        <div style="font-family:'Prompt',sans-serif;font-size:1.1rem;font-weight:600;color:#fff">นางสมศรี ใจดี</div>
+        <div style="font-size:.76rem;color:var(--muted);margin-bottom:.8rem">อายุ 68 ปี • Ventilator Day 3 • GCS 8</div>
+        <div class="pt-vitals">
+          <div><div class="vt-val" style="color:#ff6b6b">98%</div><div class="vt-lbl">SpO₂</div></div>
+          <div><div class="vt-val" style="color:#ffd166">72</div><div class="vt-lbl">HR</div></div>
+          <div><div class="vt-val" style="color:#06d6a0">118/74</div><div class="vt-lbl">BP</div></div>
+          <div><div class="vt-val" style="color:#74b9ff">37.2</div><div class="vt-lbl">Temp</div></div>
+        </div>
+      </div>
+      <div class="sec-title">โมดูลหลัก</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:1rem">
+        <button class="card" style="text-align:left;border-top:3px solid var(--rose);padding:1.1rem" onclick="navTo('myvoice',this)">
+          <div style="font-size:1.7rem;margin-bottom:.4rem">🗣️</div>
+          <div style="font-family:'Prompt',sans-serif;font-size:.95rem;font-weight:600;color:#fff">เสียงของฉัน</div>
+          <div style="font-size:.7rem;color:var(--muted)">My Voice</div>
+        </button>
+        <button class="card" style="text-align:left;border-top:3px solid var(--blue);padding:1.1rem;position:relative" onclick="navTo('heartbridge',this)">
+          <div style="font-size:1.7rem;margin-bottom:.4rem">💌</div>
+          <div style="font-family:'Prompt',sans-serif;font-size:.95rem;font-weight:600;color:#fff">สะพานใจ</div>
+          <div style="font-size:.7rem;color:var(--muted)">Heart Bridge</div>
+          <div id="msg-badge" class="hidden nav-badge">ใหม่</div>
+        </button>
+        <button class="card" style="text-align:left;border-top:3px solid var(--gold);padding:1.1rem" onclick="navTo('cocare',this)">
+          <div style="font-size:1.7rem;margin-bottom:.4rem">🤲</div>
+          <div style="font-family:'Prompt',sans-serif;font-size:.95rem;font-weight:600;color:#fff">ร่วมดูแล</div>
+          <div style="font-size:.7rem;color:var(--muted)">Co-Care</div>
+        </button>
+        <button class="card" style="text-align:left;border-top:3px solid var(--purple);padding:1.1rem" onclick="navTo('assess',this)">
+          <div style="font-size:1.7rem;margin-bottom:.4rem">📊</div>
+          <div style="font-family:'Prompt',sans-serif;font-size:.95rem;font-weight:600;color:#fff">ประเมิน</div>
+          <div style="font-size:.7rem;color:var(--muted)">Assessment</div>
+        </button>
+      </div>
+      <div class="sec-title">🔴 Live Feed — กิจกรรมล่าสุด</div>
+      <div id="live-feed"><div class="spinner"></div></div>
+    </div>
+
+    <!-- MY VOICE -->
+    <div class="page" id="pg-myvoice">
+      <div class="mod-header" style="--mc:var(--rose)">
+        <div class="mh-icon">🗣️</div>
+        <div><div class="mh-title">เสียงของฉัน</div><div class="mh-sub">กดเพื่อแจ้งพยาบาลทันที</div></div>
+      </div>
+      <div class="sec-title">ฉันต้องการ...</div>
+      <div class="need-grid">
+        <button class="need-btn" onclick="sendNeed('😣','ปวด')"><div class="need-emoji">😣</div><div class="need-lbl">ปวด</div></button>
+        <button class="need-btn" onclick="sendNeed('🥶','หนาว')"><div class="need-emoji">🥶</div><div class="need-lbl">หนาว</div></button>
+        <button class="need-btn" onclick="sendNeed('🥵','ร้อน')"><div class="need-emoji">🥵</div><div class="need-lbl">ร้อน</div></button>
+        <button class="need-btn" onclick="sendNeed('😰','กลัว')"><div class="need-emoji">😰</div><div class="need-lbl">กลัว</div></button>
+        <button class="need-btn" onclick="sendNeed('💧','กระหาย')"><div class="need-emoji">💧</div><div class="need-lbl">กระหาย</div></button>
+        <button class="need-btn" onclick="sendNeed('👨‍👩‍👧','อยากเห็นลูก')"><div class="need-emoji">👨‍👩‍👧</div><div class="need-lbl">อยากเห็นลูก</div></button>
+        <button class="need-btn" onclick="sendNeed('🙏','สวดมนต์')"><div class="need-emoji">🙏</div><div class="need-lbl">สวดมนต์</div></button>
+        <button class="need-btn" onclick="sendNeed('😴','ง่วง')"><div class="need-emoji">😴</div><div class="need-lbl">ง่วง</div></button>
+        <button class="need-btn" onclick="sendNeed('🤢','คลื่นไส้')"><div class="need-emoji">🤢</div><div class="need-lbl">คลื่นไส้</div></button>
+      </div>
+      <div class="sec-title">ระดับความเจ็บปวด (0–10)</div>
+      <div class="card">
+        <div class="pain-grid" style="margin-bottom:.5rem">
+          <button class="pain-btn" style="background:#4ade80" onclick="setPain(0)">0</button>
+          <button class="pain-btn" style="background:#86efac" onclick="setPain(1)">1</button>
+          <button class="pain-btn" style="background:#fde047" onclick="setPain(2)">2</button>
+          <button class="pain-btn" style="background:#fb923c;color:#fff" onclick="setPain(3)">3</button>
+          <button class="pain-btn" style="background:#f87171;color:#fff" onclick="setPain(4)">4</button>
+          <button class="pain-btn" style="background:#ef4444;color:#fff" onclick="setPain(5)">5</button>
+        </div>
+        <div class="pain-grid">
+          <button class="pain-btn" style="background:#dc2626;color:#fff" onclick="setPain(6)">6</button>
+          <button class="pain-btn" style="background:#b91c1c;color:#fff" onclick="setPain(7)">7</button>
+          <button class="pain-btn" style="background:#991b1b;color:#fff" onclick="setPain(8)">8</button>
+          <button class="pain-btn" style="background:#7f1d1d;color:#fff" onclick="setPain(9)">9</button>
+          <button class="pain-btn" style="background:#450a0a;color:#fff" onclick="setPain(10)">10</button>
+          <div style="display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--muted)">กด</div>
+        </div>
+        <div id="pain-result" style="margin-top:.7rem;text-align:center;font-size:.85rem;color:var(--muted);padding:.6rem;background:rgba(255,255,255,.03);border-radius:8px">กดตัวเลขเพื่อแจ้งระดับความปวด</div>
+      </div>
+      <div class="sec-title">ประวัติที่ส่งแล้ว</div>
+      <div id="needs-history"><div class="spinner"></div></div>
+    </div>
+
+    <!-- HEART BRIDGE -->
+    <div class="page" id="pg-heartbridge">
+      <div class="mod-header" style="--mc:var(--blue)">
+        <div class="mh-icon">💌</div>
+        <div><div class="mh-title">สะพานใจ</div><div class="mh-sub">ข้อมูลแชร์กันทุกอุปกรณ์</div></div>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tb-upd" onclick="switchTab('upd')">📋 อัปเดต</button>
+        <button class="tab-btn" id="tb-msg" onclick="switchTab('msg')">💬 ข้อความ</button>
+        <button class="tab-btn" id="tb-send" onclick="switchTab('send')">📤 ส่งอัปเดต</button>
+      </div>
+      <div class="tab-content active" id="tc-upd">
+        <div id="updates-list"><div class="spinner"></div></div>
+      </div>
+      <div class="tab-content" id="tc-msg">
+        <div id="messages-list" style="margin-bottom:.8rem"><div class="spinner"></div></div>
+        <div style="display:flex;gap:.5rem;position:sticky;bottom:0;background:var(--bg);padding:.5rem 0">
+          <input class="form-input" id="msg-input" type="text" placeholder="พิมพ์ข้อความ..." style="flex:1">
+          <button class="submit-btn" style="width:auto;padding:.72rem 1.2rem;margin:0" onclick="sendMsg()">ส่ง</button>
+        </div>
+      </div>
+      <div class="tab-content" id="tc-send">
+        <div class="card">
+          <label class="form-label">สรุปสภาพผู้ป่วย</label>
+          <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.7rem">
+            <button class="tab-btn active" onclick="useTmpl(0)">😊 สบายดี</button>
+            <button class="tab-btn active" onclick="useTmpl(1)">😴 พักผ่อน</button>
+            <button class="tab-btn active" onclick="useTmpl(2)">💪 ก้าวหน้า</button>
+            <button class="tab-btn active" onclick="useTmpl(3)">🎵 ฟังเพลง</button>
+          </div>
+          <textarea class="form-input" id="upd-text" rows="4" placeholder="เช่น คุณแม่ผ่อนคลาย มีแรงบีบมือ..."></textarea>
+          <label class="form-label" style="margin-top:.9rem">อาการเด่น</label>
+          <label class="chk-row"><input type="checkbox" id="c1"><span>✅ ลืมตาตาม</span></label>
+          <label class="chk-row"><input type="checkbox" id="c2"><span>✅ บีบมือได้</span></label>
+          <label class="chk-row"><input type="checkbox" id="c3"><span>✅ หายใจเองได้บางช่วง</span></label>
+          <label class="chk-row"><input type="checkbox" id="c4"><span>✅ ลดยาได้</span></label>
+          <button class="submit-btn" onclick="sendUpdate()">📤 ส่งอัปเดตให้ครอบครัว</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CO-CARE -->
+    <div class="page" id="pg-cocare">
+      <div class="mod-header" style="--mc:var(--gold)">
+        <div class="mh-icon">🤲</div>
+        <div><div class="mh-title">ร่วมดูแล</div><div class="mh-sub">ภารกิจและความก้าวหน้า</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem;background:rgba(255,209,102,.09);
+          border:1px solid rgba(255,209,102,.3);border-radius:var(--r);padding:1rem;margin-bottom:.5rem">
+        <div style="font-size:2rem">🕐</div>
+        <div>
+          <div style="font-size:.76rem;color:var(--muted)">เวลาเยี่ยมวันนี้</div>
+          <div style="font-family:'Prompt',sans-serif;font-size:1.1rem;font-weight:600;color:var(--gold)">16:00 — 16:30 น.</div>
+        </div>
+        <div id="countdown" style="margin-left:auto;font-size:.8rem;color:var(--gold);font-weight:600"></div>
+      </div>
+      <div class="sec-title">ภารกิจวันนี้ <span id="mission-prog" style="background:rgba(79,195,247,.15);border-radius:20px;padding:2px 8px;font-size:.72rem;color:var(--blue)">0/4</span></div>
+      <div id="missions-wrap">
+        <div class="mission-item" id="mi-1"><div class="m-check" onclick="toggleM(1)"></div><div><div class="m-title">จับมือและพูดชื่อ</div><div class="m-desc">เรียกชื่อ พร้อมจับมืออย่างอ่อนโยน</div></div></div>
+        <div class="mission-item" id="mi-2"><div class="m-check" onclick="toggleM(2)"></div><div><div class="m-title">นวดมือเบาๆ</div><div class="m-desc">นวดฝ่ามือ 3–5 นาทีตามวิธีที่พยาบาลสอน</div></div></div>
+        <div class="mission-item" id="mi-3"><div class="m-check" onclick="toggleM(3)"></div><div><div class="m-title">เช็ดหน้าด้วยผ้าอุ่น</div><div class="m-desc">เช็ดหน้าเบาๆ เพื่อกระตุ้นความรู้สึก</div></div></div>
+        <div class="mission-item" id="mi-4"><div class="m-check" onclick="toggleM(4)"></div><div><div class="m-title">เปิดเพลงที่ชอบ</div><div class="m-desc">เปิดลูกทุ่งเบาๆ ข้างหู ให้รู้ว่ามีคนอยู่ด้วย</div></div></div>
+      </div>
+      <div class="sec-title">🌟 Milestones</div>
+      <div class="ms-card">
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <div style="font-size:1.2rem">🫁</div>
+          <div style="flex:1;font-size:.9rem;font-weight:600;color:#fff">หายใจเองได้</div>
+          <div style="font-size:.7rem;color:var(--muted)">Day 5</div>
+        </div>
+        <div class="ms-bar"><div class="ms-fill" style="width:65%;background:linear-gradient(90deg,#06d6a0,#00b4d8)"></div></div>
+        <div style="font-size:.76rem;color:var(--text)">หายใจเองได้ 2 ชม./วัน — กำลังดีขึ้น 💪</div>
+      </div>
+      <div class="sec-title">📝 บันทึกการดูแล</div>
+      <div id="cocare-log"><div class="spinner"></div></div>
+    </div>
+
+    <!-- ASSESSMENT -->
+    <div class="page" id="pg-assess">
+      <div class="mod-header" style="--mc:var(--purple)">
+        <div class="mh-icon">📊</div>
+        <div><div class="mh-title">ประเมินผล</div><div class="mh-sub">บันทึกและติดตาม</div></div>
+      </div>
+      <div class="sec-title">Anxiety Score (STAI)</div>
+      <div class="card">
+        <div class="stai-wrap">
+          <div style="font-size:.76rem;color:var(--muted)">คะแนนวันนี้</div>
+          <div class="stai-num" id="stai-num">4</div>
+          <div class="stai-lbl" id="stai-lbl" style="color:var(--green)">วิตกกังวลน้อย</div>
+        </div>
+        <input type="range" class="stai-sl" min="0" max="10" value="4" oninput="updSTAI(this.value)">
+        <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted)"><span>0 ไม่วิตก</span><span>10 วิตกมาก</span></div>
+      </div>
+      <div class="sec-title">CAM-ICU (Delirium Screen)</div>
+      <div class="cam-item"><div class="cam-q">1. มีอาการเปลี่ยนแปลงเฉียบพลัน?</div><div class="cam-row"><button class="cam-y" id="c1y" onclick="setCAM(1,'y')">✓ ใช่</button><button class="cam-n" id="c1n" onclick="setCAM(1,'n')">✗ ไม่ใช่</button></div></div>
+      <div class="cam-item"><div class="cam-q">2. ความสนใจไม่ต่อเนื่อง?</div><div class="cam-row"><button class="cam-y" id="c2y" onclick="setCAM(2,'y')">✓ ใช่</button><button class="cam-n" id="c2n" onclick="setCAM(2,'n')">✗ ไม่ใช่</button></div></div>
+      <div class="cam-item"><div class="cam-q">3. ระดับความรู้สึกผิดปกติ?</div><div class="cam-row"><button class="cam-y" id="c3y" onclick="setCAM(3,'y')">✓ ใช่</button><button class="cam-n" id="c3n" onclick="setCAM(3,'n')">✗ ไม่ใช่</button></div></div>
+      <div id="cam-result" class="hidden" style="background:rgba(255,209,102,.1);border:1px solid rgba(255,209,102,.3);border-radius:10px;padding:.8rem;font-size:.85rem;color:var(--gold);margin:1rem 0"></div>
+      <button class="submit-btn" onclick="saveAssess()">💾 บันทึกและซิงค์</button>
+      <div class="sec-title">📈 ประวัติการประเมิน</div>
+      <div id="assess-history"><div class="spinner"></div></div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div class="page" id="pg-admin">
+      <div class="mod-header" style="--mc:var(--gold)">
+        <div class="mh-icon">👑</div>
+        <div><div class="mh-title">Admin Panel</div><div class="mh-sub">จัดการสมาชิกในระบบ</div></div>
+      </div>
+
+      <!-- Add member -->
+      <div class="add-member-form">
+        <div class="form-label">➕ เพิ่มสมาชิกใหม่</div>
+        <div class="input-row">
+          <input class="form-input" id="new-member-email" type="email" placeholder="email@gmail.com" style="flex:1">
+          <button class="submit-btn" style="width:auto;padding:.72rem 1.2rem;margin:0" onclick="addMember()">เพิ่ม</button>
+        </div>
+        <div style="margin-top:.6rem">
+          <label class="form-label">บทบาท</label>
+          <div style="display:flex;gap:.5rem">
+            <button id="role-member-btn" class="tab-btn active" onclick="selectNewRole('member',this)" style="flex:1">👤 Member</button>
+            <button id="role-admin-btn" class="tab-btn" onclick="selectNewRole('admin',this)" style="flex:1">👑 Admin</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending requests -->
+      <div class="sec-title" id="pending-title" style="display:none">⏳ รออนุมัติ</div>
+      <div id="pending-list"></div>
+
+      <!-- Export Data -->
+      <div class="sec-title">📦 Export ข้อมูล</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1rem">
+        <button data-path="activity" onclick="exportData(this.dataset.path)" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center;cursor:pointer">
+          <div style="font-size:1.5rem;margin-bottom:.3rem">🔴</div>
+          <div style="font-size:.82rem;font-weight:600;color:#fff">Live Feed</div>
+          <div style="font-size:.68rem;color:var(--muted)">กิจกรรมทั้งหมด</div>
+        </button>
+        <button data-path="messages" onclick="exportData(this.dataset.path)" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center;cursor:pointer">
+          <div style="font-size:1.5rem;margin-bottom:.3rem">💬</div>
+          <div style="font-size:.82rem;font-weight:600;color:#fff">ข้อความ</div>
+          <div style="font-size:.68rem;color:var(--muted)">Chat ทั้งหมด</div>
+        </button>
+        <button data-path="assessments" onclick="exportData(this.dataset.path)" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center;cursor:pointer">
+          <div style="font-size:1.5rem;margin-bottom:.3rem">📊</div>
+          <div style="font-size:.82rem;font-weight:600;color:#fff">ประเมินผล</div>
+          <div style="font-size:.68rem;color:var(--muted)">Assessment history</div>
+        </button>
+        <button data-path="needs" onclick="exportData(this.dataset.path)" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center;cursor:pointer">
+          <div style="font-size:1.5rem;margin-bottom:.3rem">🗣️</div>
+          <div style="font-size:.82rem;font-weight:600;color:#fff">เสียงของฉัน</div>
+          <div style="font-size:.68rem;color:var(--muted)">ความต้องการ</div>
+        </button>
+        <button data-path="updates" onclick="exportData(this.dataset.path)" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center;cursor:pointer">
+          <div style="font-size:1.5rem;margin-bottom:.3rem">📋</div>
+          <div style="font-size:.82rem;font-weight:600;color:#fff">อัปเดต</div>
+          <div style="font-size:.68rem;color:var(--muted)">Updates ทั้งหมด</div>
+        </button>
+        <button data-path="cocare" onclick="exportData(this.dataset.path)" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center;cursor:pointer">
+          <div style="font-size:1.5rem;margin-bottom:.3rem">🤲</div>
+          <div style="font-size:.82rem;font-weight:600;color:#fff">ร่วมดูแล</div>
+          <div style="font-size:.68rem;color:var(--muted)">Co-care log</div>
+        </button>
+      </div>
+      <button data-path="all" onclick="exportData(this.dataset.path)" style="width:100%;padding:.95rem;border-radius:var(--r);background:linear-gradient(135deg,var(--gold),#ffaa00);color:#000;font-size:.95rem;font-weight:700;margin-bottom:1.2rem;cursor:pointer">
+        📥 Export ทั้งหมด (All Data)
+      </button>
+
+      <!-- Member list -->
+      <div class="sec-title">👥 สมาชิกทั้งหมด</div>
+      <div id="members-list"><div class="spinner"></div></div>
+    </div>
+
+  </div><!-- pages -->
+
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nb-home" onclick="navTo('home',this)"><div class="nav-icon">🏠</div><div class="nav-lbl">หน้าหลัก</div></button>
+    <button class="nav-btn" id="nb-myvoice" onclick="navTo('myvoice',this)"><div class="nav-icon">🗣️</div><div class="nav-lbl">เสียงฉัน</div></button>
+    <button class="nav-btn" id="nb-heartbridge" onclick="navTo('heartbridge',this)"><div class="nav-icon">💌</div><div class="nav-lbl">สะพานใจ</div></button>
+    <button class="nav-btn" id="nb-cocare" onclick="navTo('cocare',this)"><div class="nav-icon">🤲</div><div class="nav-lbl">ร่วมดูแล</div></button>
+    <button class="nav-btn" id="nb-assess" onclick="navTo('assess',this)"><div class="nav-icon">📊</div><div class="nav-lbl">ประเมิน</div></button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast hidden" id="toast"></div>
+
+<!-- MODAL -->
+<div class="modal-ov hidden" id="modal-ov" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div id="modal-body"></div>
+    <button class="modal-close" onclick="closeModal()">ปิด</button>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// CONFIG — อีเมลแรกที่ login จะเป็น Admin อัตโนมัติ
+// ================================================================
+const FIRST_ADMIN_EMAIL = ''; // ถ้าต้องการกำหนด admin แรกล่วงหน้า ใส่ email ที่นี่
+
+// ================================================================
+// STATE
+// ================================================================
+const S = {
+  user: null,       // Firebase auth user
+  role: null,       // 'admin' | 'member'
+  cam: {},
+  missions: new Set(),
+  currentPage: 'home',
+  history: [],
+  newMemberRole: 'member'
+};
+
+const TEMPLATES = [
+  "ผู้ป่วยสบายดี ผ่อนคลาย หายใจสม่ำเสมอ สัญญาณชีพคงที่ 😊",
+  "ผู้ป่วยพักผ่อนหลับได้ดี ดูสงบและผ่อนคลาย 😴",
+  "วันนี้มีความก้าวหน้า! หายใจเองได้มากขึ้น ทีมดีใจมากค่ะ 💪",
+  "เปิดเพลงลูกทุ่งที่ชอบให้ฟัง เห็นมุมปากยกขึ้น 🎵"
+];
+
+const ROLE_ICONS  = { nurse:'👩‍⚕️', family:'👨‍👩‍👧', patient:'🤝', admin:'👑', member:'👤' };
+const ROLE_LABELS = { nurse:'พยาบาล ICU', family:'ครอบครัว', patient:'ผู้ป่วย', admin:'Admin', member:'สมาชิก' };
+
+// ================================================================
+// FIREBASE HELPERS
+// ================================================================
+function fb() { return window._fb; }
+
+function emailToKey(email) {
+  return email.replace(/\./g,'_').replace(/@/g,'__at__');
+}
+
+function dbPush(path, data) {
+  if (!fb()) return;
+  const { db, ref, push, serverTimestamp } = fb();
+  const name = S.user?.displayName || S.user?.email || '?';
+  const role = S.role || 'member';
+  return push(ref(db, path), { ...data, ts: serverTimestamp(), by: name, role, uid: S.user?.uid });
+}
+
+function dbSet(path, data) {
+  if (!fb()) return;
+  const { db, ref, set } = fb();
+  return set(ref(db, path), data);
+}
+
+function dbGet(path) {
+  if (!fb()) return Promise.resolve(null);
+  const { db, ref, get } = fb();
+  return get(ref(db, path));
+}
+
+function dbListen(path, cb) {
+  if (!fb()) return;
+  const { db, ref, onValue } = fb();
+  onValue(ref(db, path), cb);
+}
+
+function dbRemove(path) {
+  if (!fb()) return;
+  const { db, ref, remove } = fb();
+  return remove(ref(db, path));
+}
+
+// ================================================================
+// BOOT
+// ================================================================
+document.addEventListener('DOMContentLoaded', () => {
+  startCountdown();
+});
+
+document.addEventListener('firebase-ready', () => {
+  const { auth, onAuthStateChanged } = fb();
+  onAuthStateChanged(auth, async (user) => {
+    hideSplash();
+    if (!user) {
+      showScreen('login');
+      return;
+    }
+    S.user = user;
+    await checkAccess(user);
+  });
+  setTimeout(() => {
+    if (document.getElementById('splash').style.opacity !== '0') hideSplash();
+  }, 3000);
+});
+
+function hideSplash() {
+  const s = document.getElementById('splash');
+  s.style.opacity = '0';
+  setTimeout(() => s.classList.add('hidden'), 500);
+}
+
+function showScreen(name) {
+  ['login','denied','app'].forEach(s => {
+    document.getElementById('screen-'+s).classList.toggle('hidden', s !== name);
+  });
+}
+
+// ================================================================
+// ACCESS CONTROL
+// ================================================================
+async function checkAccess(user) {
+  const key = emailToKey(user.email);
+
+  // Check if member list exists at all
+  const membersSnap = await dbGet('members');
+  const members = membersSnap?.val() || {};
+
+  // If no members yet → first user becomes admin
+  if (Object.keys(members).length === 0) {
+    await dbSet('members/' + key, {
+      email: user.email,
+      name: user.displayName || user.email,
+      photo: user.photoURL || '',
+      role: 'admin',
+      addedAt: Date.now()
+    });
+    S.role = 'admin';
+    enterApp(user);
+    return;
+  }
+
+  // Check if user is in whitelist
+  const memberData = members[key];
+  if (!memberData) {
+    // Not in whitelist → show denied
+    document.getElementById('denied-email-show').textContent = user.email;
+    showScreen('denied');
+    return;
+  }
+
+  S.role = memberData.role || 'member';
+  enterApp(user);
+}
+
+function enterApp(user) {
+  showScreen('app');
+  setupUI(user);
+  loadAllListeners();
+  listenPresence();
+}
+
+// ================================================================
+// GOOGLE LOGIN / LOGOUT
+// ================================================================
+async function doGoogleLogin() {
+  try {
+    const { auth, provider, signInWithPopup } = fb();
+    await signInWithPopup(auth, provider);
+    // onAuthStateChanged handles the rest
+  } catch (e) {
+    console.error(e);
+    if (e.code !== 'auth/popup-closed-by-user') {
+      document.getElementById('login-error').style.display = 'block';
+    }
+  }
+}
+
+async function doSignOut() {
+  const { auth, signOut } = fb();
+  // Remove presence
+  if (S.user) {
+    const key = emailToKey(S.user.email);
+    await dbSet('presence/' + key, { online: false });
+  }
+  await signOut(auth);
+  S.user = null; S.role = null;
+  showScreen('login');
+  document.getElementById('login-error').style.display = 'none';
+}
+
+// ================================================================
+// SETUP UI
+// ================================================================
+function setupUI(user) {
+  const name = user.displayName || user.email;
+  document.getElementById('home-name').textContent = name;
+  document.getElementById('home-role-lbl').textContent = ROLE_LABELS[S.role] || 'สมาชิก';
+
+  // Avatar
+  const avatarEl = document.getElementById('tb-avatar');
+  if (user.photoURL) {
+    avatarEl.innerHTML = `<img src="${user.photoURL}" alt="avatar">`;
+  } else {
+    avatarEl.textContent = name.charAt(0).toUpperCase();
+  }
+
+  // Show admin nav button if admin
+  if (S.role === 'admin') {
+    const nav = document.querySelector('.bottom-nav');
+    if (!document.getElementById('nb-admin')) {
+      const adminBtn = document.createElement('button');
+      adminBtn.className = 'nav-btn';
+      adminBtn.id = 'nb-admin';
+      adminBtn.innerHTML = '<div class="nav-icon">👑</div><div class="nav-lbl">Admin</div>';
+      adminBtn.onclick = function() { navTo('admin', this); };
+      nav.appendChild(adminBtn);
+    }
+  }
+}
+
+// ================================================================
+// PRESENCE
+// ================================================================
+function listenPresence() {
+  if (!S.user) return;
+  const key = emailToKey(S.user.email);
+  // Set online
+  dbSet('presence/' + key, {
+    name: S.user.displayName || S.user.email,
+    email: S.user.email,
+    online: true,
+    ts: Date.now()
+  });
+  // Listen count
+  dbListen('presence', snap => {
+    const data = snap.val() || {};
+    const online = Object.values(data).filter(u => u.online).length;
+    document.getElementById('online-count').textContent =
+      online > 1 ? `${online} คนออนไลน์อยู่` : 'เชื่อมต่อแล้ว ✓';
+  });
+}
+
+// ================================================================
+// NAVIGATION
+// ================================================================
+function navTo(page, btn) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (btn && btn.classList.contains('nav-btn')) btn.classList.add('active');
+  showPage(page);
+  S.history = [];
+  document.getElementById('back-btn').classList.add('hidden');
+  if (page === 'admin') loadAdminPanel();
+}
+
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const el = document.getElementById('pg-' + page);
+  if (el) el.classList.add('active');
+  S.currentPage = page;
+  const titles = {
+    home:'ICU HEART', myvoice:'เสียงของฉัน 🗣️',
+    heartbridge:'สะพานใจ 💌', cocare:'ร่วมดูแล 🤲',
+    assess:'ประเมินผล 📊', admin:'Admin Panel 👑'
+  };
+  document.getElementById('tb-title').textContent = titles[page] || 'ICU HEART';
+  document.getElementById('pages').scrollTop = 0;
+}
+
+function goBack() {
+  const prev = S.history.pop();
+  if (prev) showPage(prev);
+  if (!S.history.length) document.getElementById('back-btn').classList.add('hidden');
+}
+
+function switchTab(id) {
+  ['upd','msg','send'].forEach(t => {
+    document.getElementById('tb-' + t).classList.remove('active');
+    document.getElementById('tc-' + t).classList.remove('active');
+  });
+  document.getElementById('tb-' + id).classList.add('active');
+  document.getElementById('tc-' + id).classList.add('active');
+}
+
+// ================================================================
+// FIREBASE LISTENERS
+// ================================================================
+function loadAllListeners() {
+  listenLiveFeed();
+  listenNeedsHistory();
+  listenUpdates();
+  listenMessages();
+  listenCocareLog();
+  listenAssessHistory();
+}
+
+function renderTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')} น.`;
+}
+
+function listenLiveFeed() {
+  dbListen('activity', snap => {
+    const data = snap.val() || {};
+    const items = Object.values(data).sort((a,b) => (b.ts||0)-(a.ts||0)).slice(0,10);
+    const el = document.getElementById('live-feed');
+    if (!items.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:1rem">ยังไม่มีกิจกรรม</div>'; return; }
+    el.innerHTML = items.map(i => `
+      <div class="live-item">
+        <div class="live-ava" style="background:rgba(79,195,247,.12)">${ROLE_ICONS[i.role]||'👤'}</div>
+        <div class="live-body">
+          <div class="live-who"><strong>${i.by||'?'}</strong> ${i.action}</div>
+          <div class="live-text">${i.text||''}</div>
+          <div class="live-time">${renderTime(i.ts)}</div>
+        </div>
+      </div>`).join('');
+  });
+}
+
+function listenNeedsHistory() {
+  dbListen('needs', snap => {
+    const data = snap.val() || {};
+    const items = Object.values(data).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,15);
+    const el = document.getElementById('needs-history');
+    if (!items.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:1rem">ยังไม่มีรายการ</div>'; return; }
+    el.innerHTML = items.map(i => `
+      <div style="display:flex;align-items:center;gap:.7rem;padding:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:.45rem">
+        <div style="font-size:1.4rem">${i.emoji||'💬'}</div>
+        <div style="flex:1"><div style="font-size:.86rem;color:#fff;font-weight:500">${i.need||''}</div><div style="font-size:.7rem;color:var(--muted)">${i.by||''} • ${renderTime(i.ts)}</div></div>
+        <div style="font-size:.72rem;color:var(--green)">✓ ส่งแล้ว</div>
+      </div>`).join('');
+  });
+}
+
+function listenUpdates() {
+  dbListen('updates', snap => {
+    const data = snap.val() || {};
+    const items = Object.values(data).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,5);
+    const el = document.getElementById('updates-list');
+    if (!items.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:1rem">ยังไม่มีอัปเดต</div>'; return; }
+    el.innerHTML = items.map(i => `
+      <div class="card" style="border-left:3px solid var(--blue);margin-bottom:.7rem">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
+          <div style="background:rgba(79,195,247,.15);border-radius:6px;padding:2px 8px;font-size:.72rem;color:var(--blue);font-weight:600">กะ${i.shift||''}</div>
+          <div style="font-size:.7rem;color:var(--muted);flex:1">${renderTime(i.ts)}</div>
+          <div style="font-size:.7rem;color:var(--muted)">${i.by||''}</div>
+        </div>
+        <div style="font-size:.88rem;color:var(--text);line-height:1.55">${i.text||''}</div>
+        ${i.symptoms ? `<div style="margin-top:.6rem;font-size:.75rem;color:var(--teal)">${i.symptoms}</div>` : ''}
+      </div>`).join('');
+  });
+}
+
+function listenMessages() {
+  dbListen('messages', snap => {
+    const data = snap.val() || {};
+    const items = Object.values(data).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const el = document.getElementById('messages-list');
+    if (!items.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:1rem">ยังไม่มีข้อความ</div>'; return; }
+    const myUid = S.user?.uid;
+    el.innerHTML = items.map(i => {
+      const isMine = i.uid === myUid;
+      const borderColor = i.role === 'nurse' || i.role === 'admin' ? 'var(--blue)' : i.role === 'family' ? 'var(--rose)' : 'var(--gold)';
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${borderColor};border-radius:var(--r);padding:1rem;margin-bottom:.7rem${isMine?';background:rgba(79,195,247,.04)':''}">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:.3rem">${ROLE_ICONS[i.role]||'👤'} <strong style="color:var(--text)">${i.by||'?'}</strong>${isMine?' (คุณ)':''}</div>
+        <div style="font-size:.88rem;color:#fff;line-height:1.5">${i.text||''}</div>
+        <div style="font-size:.66rem;color:var(--muted);margin-top:.3rem">${renderTime(i.ts)}</div>
+      </div>`;
+    }).join('');
+    document.getElementById('msg-badge').classList.toggle('hidden', items.length === 0);
+  });
+}
+
+function listenCocareLog() {
+  dbListen('cocare', snap => {
+    const data = snap.val() || {};
+    const items = Object.values(data).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,8);
+    const el = document.getElementById('cocare-log');
+    if (!items.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:1rem">ยังไม่มีบันทึก</div>'; return; }
+    el.innerHTML = items.map(i => `
+      <div class="live-item">
+        <div class="live-ava" style="background:rgba(255,209,102,.12)">🤲</div>
+        <div class="live-body">
+          <div class="live-who"><strong>${i.by||'?'}</strong> ทำภารกิจ</div>
+          <div class="live-text">${i.mission||''}</div>
+          <div class="live-time">${renderTime(i.ts)}</div>
+        </div>
+      </div>`).join('');
+  });
+}
+
+function listenAssessHistory() {
+  dbListen('assessments', snap => {
+    const data = snap.val() || {};
+    const items = Object.values(data).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,5);
+    const el = document.getElementById('assess-history');
+    if (!items.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:1rem">ยังไม่มีข้อมูล</div>'; return; }
+    el.innerHTML = items.map(i => `
+      <div style="display:flex;gap:.7rem;padding:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:.45rem">
+        <div style="font-size:1.3rem">📊</div>
+        <div style="flex:1">
+          <div style="font-size:.86rem;color:#fff">Anxiety: <strong>${i.stai||0}/10</strong> | CAM: <strong style="color:${i.camPos>=2?'var(--rose)':'var(--green)'}">${i.camPos>=2?'Positive':'Negative'}</strong></div>
+          <div style="font-size:.7rem;color:var(--muted)">${i.by||''} • ${renderTime(i.ts)}</div>
+        </div>
+      </div>`).join('');
+  });
+}
+
+// ================================================================
+// ADMIN PANEL
+// ================================================================
+function loadAdminPanel() {
+  if (S.role !== 'admin') return;
+  dbListen('members', snap => {
+    const data = snap.val() || {};
+    const el = document.getElementById('members-list');
+    const items = Object.entries(data).sort((a,b) => (a[1].addedAt||0)-(b[1].addedAt||0));
+    if (!items.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:1rem">ยังไม่มีสมาชิก</div>'; return; }
+    el.innerHTML = items.map(([key, m]) => `
+      <div class="member-row">
+        <div class="member-photo">${m.photo ? `<img src="${m.photo}">` : '👤'}</div>
+        <div class="member-info">
+          <div class="member-name">${m.name||m.email||'—'}</div>
+          <div class="member-email">${m.email||''}</div>
+          <span class="member-role ${m.role==='admin'?'role-admin':'role-member'}">${m.role==='admin'?'👑 Admin':'👤 Member'}</span>
+        </div>
+        ${m.email !== S.user?.email ? `
+        <button class="del-btn" data-key="${key}" onclick="removeMember(this.dataset.key,'${m.email}')">✕</button>
+        ` : '<div style="font-size:.72rem;color:var(--muted);font-style:italic">คุณ</div>'}
+      </div>`).join('');
+  });
+}
+
+function selectNewRole(role, btn) {
+  S.newMemberRole = role;
+  document.getElementById('role-member-btn').classList.toggle('active', role === 'member');
+  document.getElementById('role-admin-btn').classList.toggle('active', role === 'admin');
+}
+
+async function addMember() {
+  if (S.role !== 'admin') return;
+  const email = (document.getElementById('new-member-email').value || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) { toast('กรุณาใส่อีเมลให้ถูกต้อง', 'err'); return; }
+  const key = emailToKey(email);
+  // Check duplicate
+  const snap = await dbGet('members/' + key);
+  if (snap.val()) { toast('อีเมลนี้มีอยู่ในระบบแล้ว', 'err'); return; }
+  await dbSet('members/' + key, {
+    email,
+    name: email.split('@')[0],
+    photo: '',
+    role: S.newMemberRole,
+    addedAt: Date.now(),
+    addedBy: S.user?.email || ''
+  });
+  document.getElementById('new-member-email').value = '';
+  toast(`✅ เพิ่ม ${email} สำเร็จ (${S.newMemberRole})`);
+}
+
+async function removeMember(key, email) {
+  if (S.role !== 'admin') return;
+  if (!confirm(`ลบ ${email} ออกจากระบบ?`)) return;
+  await dbRemove('members/' + key);
+  toast(`ลบ ${email} แล้ว`);
+}
+
+// ================================================================
+// ACTIONS — WRITE TO FIREBASE
+// ================================================================
+function sendNeed(emoji, need) {
+  if (navigator.vibrate) navigator.vibrate([100,50,100]);
+  dbPush('needs', { emoji, need });
+  dbPush('activity', { action:'แจ้งความต้องการ', text:`${emoji} ${need}` });
+  toast(`✅ แจ้ง "${need}" แล้ว — พยาบาลรับทราบเร็วๆ นี้`);
+}
+
+function setPain(val) {
+  S.painLevel = val;
+  document.querySelectorAll('.pain-btn').forEach((b,i) => b.classList.toggle('sel', i===val));
+  const labels = ['ไม่เจ็บ 😊','น้อยมาก','น้อย','พอทน','ปานกลาง','พอสมควร','มาก','มากขึ้น','ทนไม่ได้','มากที่สุด','ทนไม่ได้เลย 😭'];
+  const colors = ['#4ade80','#86efac','#bef264','#fde047','#fb923c','#f87171','#ef4444','#dc2626','#b91c1c','#991b1b','#7f1d1d'];
+  const r = document.getElementById('pain-result');
+  r.textContent = `ระดับ ${val}/10 — ${labels[val]}`;
+  r.style.color = colors[val]; r.style.background = colors[val]+'22';
+  if (val>=7) { toast(`⚠️ ความปวดระดับ ${val} — แจ้งพยาบาลทันที!`, 'err'); if(navigator.vibrate) navigator.vibrate([200,100,200]); }
+  else toast(`บันทึกความปวดระดับ ${val}`);
+  dbPush('needs', { emoji:'😣', need:`ปวดระดับ ${val}/10` });
+  dbPush('activity', { action:'แจ้งความปวด', text:`ระดับ ${val}/10` });
+}
+
+function sendMsg() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+  dbPush('messages', { text });
+  dbPush('activity', { action:'ส่งข้อความ', text });
+  input.value = '';
+  toast('✅ ส่งข้อความแล้ว');
+}
+
+function useTmpl(i) { document.getElementById('upd-text').value = TEMPLATES[i]; }
+
+function sendUpdate() {
+  const text = document.getElementById('upd-text').value.trim();
+  if (!text) { toast('กรุณาพิมพ์สรุปสภาพผู้ป่วยก่อน', 'err'); return; }
+  const syms = [];
+  if (document.getElementById('c1').checked) syms.push('ลืมตาตาม');
+  if (document.getElementById('c2').checked) syms.push('บีบมือได้');
+  if (document.getElementById('c3').checked) syms.push('หายใจเองได้');
+  if (document.getElementById('c4').checked) syms.push('ลดยาได้');
+  const now = new Date();
+  const h = now.getHours();
+  const shift = h<12?'เช้า':h<18?'บ่าย':'ดึก';
+  dbPush('updates', { text, symptoms: syms.join(' • '), shift });
+  dbPush('activity', { action:'ส่งอัปเดตกะ'+shift, text });
+  document.getElementById('upd-text').value = '';
+  ['c1','c2','c3','c4'].forEach(id => document.getElementById(id).checked = false);
+  toast('📤 ส่งอัปเดตให้ครอบครัวแล้ว!');
+}
+
+function toggleM(num) {
+  const item = document.getElementById(`mi-${num}`);
+  const check = item.querySelector('.m-check');
+  const done = S.missions.has(num);
+  if (done) {
+    S.missions.delete(num); item.classList.remove('done'); check.textContent = '';
+  } else {
+    S.missions.add(num); item.classList.add('done'); check.textContent = '✓';
+    const title = item.querySelector('.m-title').textContent;
+    dbPush('cocare', { mission: title });
+    dbPush('activity', { action:'ทำภารกิจสำเร็จ', text: title });
+    toast(`🌟 ทำ "${title}" สำเร็จแล้ว!`);
+    if (navigator.vibrate) navigator.vibrate(200);
+  }
+  document.getElementById('mission-prog').textContent = `${S.missions.size}/4`;
+  if (S.missions.size===4) setTimeout(()=>toast('🎉 ครบทุกภารกิจวันนี้ ขอบคุณมากค่ะ!'),300);
+}
+
+// ASSESSMENT
+const STAI_LABELS = ['','','ไม่วิตก','ไม่วิตก','วิตกน้อย','วิตกปานกลาง','วิตกปานกลาง','วิตกมาก','วิตกมาก','วิตกมากที่สุด','วิตกมากที่สุด'];
+const STAI_COLORS = ['#4ade80','#4ade80','#4ade80','#86efac','#06d6a0','#fde047','#fb923c','#f87171','#ef4444','#dc2626','#b91c1c'];
+function updSTAI(v) {
+  v = parseInt(v);
+  document.getElementById('stai-num').textContent = v;
+  document.getElementById('stai-lbl').textContent = STAI_LABELS[v]||'วิตกน้อย';
+  document.getElementById('stai-lbl').style.color = STAI_COLORS[v]||'var(--green)';
+}
+function setCAM(num, val) {
+  S.cam[num] = val;
+  document.getElementById(`c${num}y`).classList.toggle('sel', val==='y');
+  document.getElementById(`c${num}n`).classList.toggle('sel', val==='n');
+  if (Object.keys(S.cam).length===3) {
+    const pos = Object.values(S.cam).filter(v=>v==='y').length;
+    const el = document.getElementById('cam-result');
+    el.classList.remove('hidden');
+    if (pos>=2) { el.style.color='var(--rose)'; el.style.borderColor='rgba(255,107,157,.3)'; el.style.background='rgba(255,107,157,.08)'; el.textContent=`⚠️ CAM-ICU Positive (${pos}/3) — พิจารณาประเมินเพิ่มเติม`; }
+    else { el.style.color='var(--green)'; el.style.borderColor='rgba(6,214,160,.25)'; el.style.background='rgba(6,214,160,.08)'; el.textContent=`✅ CAM-ICU Negative (${pos}/3) — ไม่พบ Delirium ขณะนี้`; }
+  }
+}
+function saveAssess() {
+  const stai = parseInt(document.querySelector('.stai-sl').value);
+  const camPos = Object.values(S.cam).filter(v=>v==='y').length;
+  dbPush('assessments', { stai, camPos });
+  dbPush('activity', { action:'บันทึกประเมิน', text:`Anxiety ${stai}/10 | CAM ${camPos>=2?'Positive':'Negative'}` });
+  toast('💾 บันทึกและซิงค์แล้ว!');
+}
+
+
+// ================================================================
+// EXPORT DATA
+// ================================================================
+async function exportData(path) {
+  if (S.role !== 'admin') return;
+  toast('กำลังโหลดข้อมูล...', 'ok');
+  try {
+    let data = {};
+    if (path === 'all') {
+      // Export everything
+      const paths = ['activity','messages','assessments','needs','updates','cocare','members'];
+      for (const p of paths) {
+        const snap = await dbGet(p);
+        data[p] = snap.val() || {};
+      }
+    } else {
+      const snap = await dbGet(path);
+      data[path] = snap.val() || {};
+    }
+    const json = JSON.stringify(data, null, 2);
+    const pathLabel = path === 'all' ? 'ALL_DATA' : path.toUpperCase();
+    const date = new Date().toISOString().split('T')[0];
+    showExportModal(json, `ICU_HEART_${pathLabel}_${date}`);
+  } catch(e) {
+    toast('Export ไม่สำเร็จ: ' + e.message, 'err');
+  }
+}
+
+function showExportModal(json, filename) {
+  const old = document.getElementById('xm'); if (old) old.remove();
+  const o = document.createElement('div'); o.id = 'xm';
+  o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;display:flex;flex-direction:column;padding:16px;gap:10px;box-sizing:border-box;padding-bottom:calc(env(safe-area-inset-bottom,0px)+16px)';
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;justify-content:space-between;align-items:center;flex-shrink:0';
+  const ttl = document.createElement('div');
+  ttl.innerHTML = '<div style="font-size:17px;font-weight:700;color:#fff">📥 Export: '+filename+'</div><div style="font-size:12px;color:#8892b0;margin-top:2px">Copy แล้วบันทึกเป็น .json</div>';
+  const cls = document.createElement('button');
+  cls.textContent = '✕'; cls.onclick = () => o.remove();
+  cls.style.cssText = 'background:none;border:none;color:#8892b0;font-size:22px;cursor:pointer;padding:4px;line-height:1';
+  hdr.appendChild(ttl); hdr.appendChild(cls);
+  const ins = document.createElement('div');
+  ins.style.cssText = 'font-size:12px;color:#8892b0;background:#112240;padding:10px 12px;border-radius:8px;border:1px solid rgba(79,195,247,.2);flex-shrink:0';
+  ins.textContent = '1. กด Copy All  2. เปิด Notes → Paste  3. Share → Save to Files → ตั้งชื่อ '+filename+'.json';
+  const ta = document.createElement('textarea');
+  ta.readOnly = true; ta.value = json;
+  ta.style.cssText = 'flex:1;background:#0b1f3a;border:1px solid rgba(79,195,247,.2);border-radius:8px;color:#4fc3f7;font-family:monospace;font-size:10px;padding:10px;resize:none;-webkit-user-select:all;user-select:all';
+  const cpb = document.createElement('button');
+  cpb.textContent = '📋 Copy All JSON';
+  cpb.style.cssText = 'background:linear-gradient(135deg,#4fc3f7,#00b4d8);border:none;border-radius:10px;color:#000;font-weight:700;font-size:16px;padding:13px;cursor:pointer;flex-shrink:0';
+  cpb.onclick = () => {
+    ta.select(); ta.setSelectionRange(0, 99999);
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(ta.value).then(() => toast('Copied ✓'));
+    else { try { document.execCommand('copy'); toast('Copied ✓'); } catch(e) {} }
+  };
+  o.appendChild(hdr); o.appendChild(ins); o.appendChild(ta); o.appendChild(cpb);
+  document.body.appendChild(o);
+}
+
+// ================================================================
+// UI HELPERS
+// ================================================================
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `toast${type==='err'?' err':''}`;
+  el.classList.remove('hidden');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.add('hidden'), 3200);
+}
+function showModal(html) { document.getElementById('modal-body').innerHTML=html; document.getElementById('modal-ov').classList.remove('hidden'); }
+function closeModal() { document.getElementById('modal-ov').classList.add('hidden'); }
+function show(id) { document.getElementById(id)?.classList.remove('hidden'); }
+function hide(id) { document.getElementById(id)?.classList.add('hidden'); }
+
+function showProfile() {
+  const user = S.user;
+  if (!user) return;
+  const photo = user.photoURL ? `<img src="${user.photoURL}" style="width:64px;height:64px;border-radius:50%;margin-bottom:.8rem">` : `<div style="font-size:3.5rem">${ROLE_ICONS[S.role]||'👤'}</div>`;
+  showModal(`<div style="text-align:center;padding:.5rem">
+    ${photo}
+    <div style="font-family:'Prompt',sans-serif;font-size:1.15rem;font-weight:600;color:#fff;margin:.3rem 0">${user.displayName||''}</div>
+    <div style="font-size:.82rem;color:var(--muted);margin-bottom:.3rem">${user.email||''}</div>
+    <div style="font-size:.75rem;color:var(--blue)">${ROLE_LABELS[S.role]||'สมาชิก'}</div>
+    <button onclick="closeModal();doSignOut()" style="margin-top:1.2rem;width:100%;padding:.85rem;border-radius:12px;background:rgba(255,107,157,.1);border:1px solid rgba(255,107,157,.25);color:var(--rose);font-size:.9rem;cursor:pointer;font-family:'Sarabun',sans-serif">🚪 ออกจากระบบ</button>
+  </div>`);
+}
+
+// ================================================================
+// COUNTDOWN
+// ================================================================
+function startCountdown() {
+  function update() {
+    const now = new Date();
+    const start = new Date(); start.setHours(16,0,0,0);
+    const end   = new Date(); end.setHours(16,30,0,0);
+    const el = document.getElementById('countdown');
+    if (!el) return;
+    if (now>=start&&now<=end) {
+      const rem = Math.floor((end-now)/1000);
+      el.textContent=`⏱ ${Math.floor(rem/60)}:${(rem%60).toString().padStart(2,'0')}`;
+      el.style.color='var(--green)';
+    } else if (now<start) {
+      const diff = Math.floor((start-now)/1000/60);
+      el.textContent = diff>60?`อีก ${Math.floor(diff/60)} ชม.`:`อีก ${diff} นาที`;
+    } else { el.textContent='หมดเวลาแล้ว'; el.style.color='var(--muted)'; }
+  }
+  update(); setInterval(update,1000);
+}
+</script>
+</body>
+</html>
