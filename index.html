@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b1f3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ICU HEART">
+<title>ICU HEART</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- QR Code library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, push, onValue, set, get, serverTimestamp, remove, update }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAgu08aitT_rMrg9pLBAbSExHSqjm_3Zr0",
+    authDomain: "icu-heart.firebaseapp.com",
+    databaseURL: "https://icu-heart-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "icu-heart",
+    storageBucket: "icu-heart.firebasestorage.app",
+    messagingSenderId: "618254698325",
+    appId: "1:618254698325:web:cf1b767cdee1543d7691dc"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const db   = getDatabase(app);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  window._fb = { db, auth, provider, ref, push, onValue, set, get, serverTimestamp, remove, update,
+    signInWithPopup, signOut, onAuthStateChanged };
+  window._firebaseReady = true;
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0b1f3a;--surface:#112240;--surface2:#1a3358;
+  --border:rgba(79,195,247,.18);--blue:#4fc3f7;--teal:#00b4d8;
+  --rose:#ff6b9d;--gold:#ffd166;--green:#06d6a0;--purple:#a29bfe;
+  --white:#fff;--text:#ccd6f6;--muted:#8892b0;
+  --r:16px;--rs:10px;--sh:0 8px 32px rgba(0,0,0,.4);
+}
+html,body{height:100%;width:100%;overflow:hidden;font-family:'Sarabun',sans-serif;
+  background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.hidden{display:none!important}
+button{font-family:'Sarabun',sans-serif;cursor:pointer;border:none;outline:none}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;
+  justify-content:center;background:var(--bg);transition:opacity .5s}
+.splash-bg{position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 40%,rgba(255,107,157,.2) 0%,transparent 60%),
+             radial-gradient(ellipse at 30% 70%,rgba(79,195,247,.1) 0%,transparent 50%)}
+.splash-inner{position:relative;text-align:center}
+.s-heart{font-size:5rem;animation:hb 1.2s ease infinite;display:block;margin-bottom:1rem}
+@keyframes hb{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.s-title{font-family:'Prompt',sans-serif;font-size:3rem;font-weight:700;color:#fff;letter-spacing:3px}
+.s-sub{color:var(--blue);font-size:.95rem;letter-spacing:2px;margin:.4rem 0 1.8rem}
+.s-dots{display:flex;gap:8px;justify-content:center}
+.s-dot{width:8px;height:8px;border-radius:50%;animation:db 1.2s ease infinite}
+.s-dot:nth-child(1){background:var(--rose)}.s-dot:nth-child(2){background:var(--blue);animation-delay:.2s}.s-dot:nth-child(3){background:var(--gold);animation-delay:.4s}
+@keyframes db{0%,80%,100%{transform:scale(.6);opacity:.5}40%{transform:scale(1.2);opacity:1}}
+
+/* SCREENS */
+.screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto}
+
+/* LOGIN */
+.login-bg{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 30% 20%,rgba(79,195,247,.12) 0%,transparent 50%),
+             radial-gradient(ellipse at 70% 80%,rgba(255,107,157,.1) 0%,transparent 40%)}
+.login-wrap{position:relative;width:100%;max-width:420px}
+.login-logo{text-align:center;margin-bottom:2rem}
+.logo-heart{font-size:3.2rem;animation:hb 2s ease infinite;display:block}
+.logo-txt{font-family:'Prompt',sans-serif;font-size:2rem;font-weight:700;color:#fff;letter-spacing:3px}
+.logo-txt span{color:var(--rose)}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:1.8rem;box-shadow:var(--sh)}
+.login-card h2{font-family:'Prompt',sans-serif;font-size:1.2rem;margin-bottom:.3rem}
+.login-desc{color:var(--muted);font-size:.88rem;margin-bottom:1.4rem;line-height:1.6}
+.google-btn{width:100%;padding:1rem;border-radius:12px;font-size:.95rem;font-weight:700;
+  background:#fff;color:#333;display:flex;align-items:center;justify-content:center;gap:.7rem;
+  box-shadow:0 4px 16px rgba(0,0,0,.3);transition:all .2s;margin-bottom:.8rem}
+.google-btn:active{transform:scale(.98)}
+.err-box{background:rgba(255,107,157,.08);border:1px solid rgba(255,107,157,.25);
+  border-radius:12px;padding:1rem;font-size:.85rem;color:var(--rose);text-align:center;display:none}
+
+/* FAMILY VIEW (QR access) */
+.family-wrap{width:100%;max-width:460px}
+.family-header{text-align:center;margin-bottom:1.5rem}
+.family-header .logo-heart{font-size:2.5rem}
+.family-header .logo-txt{font-size:1.5rem}
+
+/* DENIED */
+.denied-card{background:var(--surface);border:1px solid rgba(255,107,157,.3);
+  border-radius:24px;padding:2rem;width:100%;max-width:400px;text-align:center}
+
+/* APP (nurse) */
+#screen-app{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:.5rem;padding:.8rem 1rem;
+  background:rgba(11,31,58,.96);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+  padding-top:max(.8rem,env(safe-area-inset-top))}
+.tb-back{width:36px;height:36px;border-radius:10px;background:var(--surface2);
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  color:var(--text);flex-shrink:0;cursor:pointer}
+.tb-center{flex:1;text-align:center}
+.tb-title{font-family:'Prompt',sans-serif;font-size:1rem;font-weight:600;color:#fff}
+.tb-sub{font-size:.7rem;color:var(--muted)}
+.tb-avatar{width:36px;height:36px;border-radius:50%;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;
+  background:linear-gradient(135deg,var(--blue),var(--teal));cursor:pointer}
+.tb-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+
+.page-container{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:84px}
+.page{display:none;padding:1rem;animation:fi .3s ease}
+.page.active{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;display:flex;
+  background:rgba(11,31,58,.97);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;padding:.6rem .3rem;border:none;background:transparent;
+  display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .2s}
+.nav-btn.active .nav-icon{transform:scale(1.15)}
+.nav-btn.active .nav-lbl{color:var(--blue)}
+.nav-icon{font-size:1.35rem;transition:transform .2s}
+.nav-lbl{font-size:.63rem;color:var(--muted)}
+
+/* FAMILY APP (QR view) */
+#screen-family{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.family-topbar{display:flex;align-items:center;gap:.5rem;padding:.8rem 1rem;
+  background:rgba(11,31,58,.96);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+  padding-top:max(.8rem,env(safe-area-inset-top))}
+.family-page-container{flex:1;overflow-y:auto;padding-bottom:20px}
+
+/* CARDS & COMPONENTS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;margin-bottom:.8rem}
+.sec-title{font-family:'Prompt',sans-serif;font-size:.9rem;font-weight:600;
+  color:#fff;margin:1.2rem 0 .7rem;display:flex;align-items:center;gap:.4rem}
+.submit-btn{width:100%;padding:.95rem;border-radius:var(--r);
+  background:linear-gradient(135deg,var(--blue),var(--teal));color:#fff;
+  font-size:.95rem;font-weight:700;box-shadow:0 6px 20px rgba(79,195,247,.3);
+  transition:all .2s;margin-top:.8rem}
+.submit-btn:active{transform:scale(.98)}
+.form-label{font-size:.8rem;color:var(--muted);margin-bottom:.4rem;display:block}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:.72rem 1rem;color:#fff;font-size:.9rem;
+  font-family:'Sarabun',sans-serif;outline:none}
+.form-input:focus{border-color:var(--blue)}
+textarea.form-input{resize:none}
+
+/* PATIENT CARD */
+.pt-card{background:linear-gradient(135deg,#1a3a5c,#0d2a44);border:1px solid rgba(79,195,247,.25);
+  border-radius:var(--r);padding:1.2rem;margin-bottom:.8rem;cursor:pointer;transition:all .2s}
+.pt-card:active{transform:scale(.98)}
+.pt-card.selected{border-color:var(--blue);box-shadow:0 0 0 2px rgba(79,195,247,.3)}
+.pt-vitals{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin:.8rem 0}
+.vt-val{font-family:'Prompt',sans-serif;font-size:1rem;font-weight:700}
+.vt-lbl{font-size:.62rem;color:var(--muted)}
+.pulse-dot{width:9px;height:9px;border-radius:50%;background:var(--green);animation:pulse-dot 2s ease infinite}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(6,214,160,.5)}50%{box-shadow:0 0 0 5px rgba(6,214,160,0)}}
+.bed-badge{background:rgba(79,195,247,.12);border-radius:6px;padding:2px 8px;font-size:.72rem;color:var(--blue)}
+
+/* TABS */
+.tab-bar{display:flex;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:4px;gap:4px;margin-bottom:1rem}
+.tab-btn{flex:1;padding:.58rem .3rem;border-radius:7px;border:none;
+  background:transparent;font-size:.73rem;color:var(--muted);transition:all .2s;font-family:'Sarabun',sans-serif}
+.tab-btn.active{background:var(--surface2);color:#fff}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* LIVE FEED */
+.live-item{display:flex;gap:.8rem;padding:.8rem;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--rs);margin-bottom:.5rem;animation:fi .4s ease}
+.live-ava{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.live-body{flex:1;min-width:0}
+.live-who{font-size:.7rem;color:var(--muted);margin-bottom:.2rem}
+.live-who strong{color:var(--text)}
+.live-text{font-size:.86rem;color:#fff;line-height:1.45}
+.live-time{font-size:.66rem;color:var(--muted);margin-top:.3rem}
+
+/* NEEDS GRID */
+.need-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin-bottom:1rem}
+.need-btn{background:var(--surface);border:2px solid var(--border);border-radius:var(--r);
+  padding:.9rem .4rem;text-align:center;transition:all .15s;color:var(--text);cursor:pointer}
+.need-btn:active{transform:scale(.92);background:rgba(255,107,157,.12);border-color:var(--rose)}
+.need-emoji{font-size:2rem;margin-bottom:.25rem}
+.need-lbl{font-size:.75rem}
+
+/* PAIN */
+.pain-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:.4rem}
+.pain-btn{border-radius:9px;border:2px solid transparent;aspect-ratio:1;
+  font-size:.82rem;font-weight:700;color:rgba(0,0,0,.75);transition:all .15s;cursor:pointer}
+.pain-btn.sel{border-color:#fff;transform:scale(1.18)}
+
+/* QR */
+.qr-container{display:flex;justify-content:center;margin:1rem 0}
+.qr-container canvas, .qr-container img{border-radius:12px;padding:12px;background:#fff}
+
+/* MEMBER ROW */
+.member-row{display:flex;align-items:center;gap:.8rem;padding:.8rem;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:.5rem}
+.member-info{flex:1;min-width:0}
+.member-name{font-size:.88rem;color:#fff;font-weight:500}
+.member-email{font-size:.72rem;color:var(--muted)}
+.del-btn{width:32px;height:32px;border-radius:8px;background:rgba(255,107,157,.1);
+  border:1px solid rgba(255,107,157,.25);color:var(--rose);font-size:.9rem;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer}
+
+/* ASSESSMENT */
+.stai-sl{width:100%;accent-color:var(--blue);margin:.8rem 0}
+.cam-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:.85rem;margin-bottom:.55rem}
+.cam-q{font-size:.85rem;color:var(--text);margin-bottom:.55rem}
+.cam-row{display:flex;gap:.5rem}
+.cam-y,.cam-n{flex:1;padding:.48rem;border-radius:8px;border:1px solid var(--border);font-size:.82rem;transition:all .2s;font-family:'Sarabun',sans-serif;cursor:pointer}
+.cam-y{background:rgba(6,214,160,.08);color:var(--green)}
+.cam-n{background:rgba(255,107,157,.08);color:var(--rose)}
+.cam-y.sel{background:var(--green);color:#fff}
+.cam-n.sel{background:var(--rose);color:#fff}
+
+/* TOAST */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);
+  background:rgba(6,214,160,.95);color:#fff;border-radius:30px;padding:.65rem 1.4rem;
+  font-size:.86rem;font-weight:600;z-index:9999;animation:toastIn .3s ease;white-space:nowrap;pointer-events:none}
+.toast.err{background:rgba(255,107,157,.95)}
+@keyframes toastIn{from{transform:translateX(-50%) translateY(18px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+
+/* MODAL */
+.modal-ov{position:fixed;inset:0;z-index:8888;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  display:flex;align-items:flex-end;justify-content:center;padding:1rem}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:24px 24px 0 0;
+  width:100%;max-width:520px;padding:1.5rem;animation:modalUp .3s ease;max-height:88vh;overflow-y:auto}
+@keyframes modalUp{from{transform:translateY(50px);opacity:0}to{transform:none;opacity:1}}
+.modal-close{width:100%;padding:.88rem;border-radius:12px;background:var(--surface2);
+  border:1px solid var(--border);color:var(--muted);font-size:.92rem;margin-top:.8rem;cursor:pointer;font-family:'Sarabun',sans-serif}
+.mh{width:34px;height:3px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 12px}
+
+.spinner{width:32px;height:32px;border:3px solid rgba(79,195,247,.2);
+  border-top:3px solid var(--blue);border-radius:50%;animation:spin 1s linear infinite;margin:2rem auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.input-row{display:flex;gap:.5rem}
+.chk-row{display:flex;align-items:center;gap:.6rem;padding:.5rem;
+  background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:.4rem;cursor:pointer}
+.chk-row input{accent-color:var(--blue);width:17px;height:17px}
+.chk-row span{font-size:.86rem;color:var(--text)}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-bg"></div>
+  <div class="splash-inner">
+    <span class="s-heart">💙</span>
+    <div class="s-title">ICU HEART</div>
+    <div class="s-sub">Humanized Care • Shared</div>
+    <div class="s-dots"><div class="s-dot"></div><div class="s-dot"></div><div class="s-dot"></div></div>
+  </div>
+</div>
+
+<!-- NURSE LOGIN -->
+<div id="screen-login" class="screen hidden">
+  <div class="login-bg"></div>
+  <div class="login-wrap">
+    <div class="login-logo">
+      <span class="logo-heart">❤️</span>
+      <div class="logo-txt">ICU <span>HEART</span></div>
+    </div>
+    <div class="login-card">
+      <h2>เข้าสู่ระบบ — พยาบาล</h2>
+      <p class="login-desc">ลงชื่อด้วย Google account<br>สำหรับบุคลากรทางการแพทย์</p>
+      <button class="google-btn" onclick="doGoogleLogin()">
+        <span>🔵</span><span>Sign in with Google</span>
+      </button>
+      <div class="err-box" id="login-error">❌ อีเมลนี้ไม่มีสิทธิ์เข้าใช้งาน<br><small>กรุณาติดต่อ Admin</small></div>
+    </div>
+  </div>
+</div>
+
+<!-- ACCESS DENIED -->
+<div id="screen-denied" class="screen hidden">
+  <div class="denied-card">
+    <div style="font-size:3rem;margin-bottom:1rem">🔒</div>
+    <div style="font-family:'Prompt',sans-serif;font-size:1.2rem;color:var(--rose);margin-bottom:.5rem">ไม่มีสิทธิ์เข้าใช้งาน</div>
+    <div style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">กรุณาติดต่อ Admin เพื่อขอสิทธิ์</div>
+    <div id="denied-email" style="background:rgba(255,107,157,.08);border-radius:8px;padding:.5rem .8rem;font-size:.8rem;color:var(--rose);margin-bottom:1.2rem;word-break:break-all"></div>
+    <button onclick="doSignOut()" style="width:100%;padding:.85rem;border-radius:12px;background:rgba(255,107,157,.1);border:1px solid rgba(255,107,157,.25);color:var(--rose);font-size:.9rem;cursor:pointer;font-family:'Sarabun',sans-serif">🚪 ออกจากระบบ</button>
+  </div>
+</div>
+
+<!-- FAMILY/PATIENT VIEW (QR access) -->
+<div id="screen-family" class="hidden">
+  <div class="family-topbar">
+    <div style="flex:1;text-align:center">
+      <div style="font-family:'Prompt',sans-serif;font-size:1rem;font-weight:600;color:#fff">ICU HEART 💙</div>
+      <div style="font-size:.7rem;color:var(--muted)" id="family-patient-name">กำลังโหลด...</div>
+    </div>
+  </div>
+
+  <div class="family-page-container" id="family-pages">
+
+    <!-- FAMILY HOME -->
+    <div style="padding:1rem" id="family-pg-home">
+      <!-- Patient info card -->
+      <div class="card" style="background:linear-gradient(135deg,#1a3a5c,#0d2a44);border:1px solid rgba(79,195,247,.25)">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.7rem">
+          <div class="pulse-dot"></div>
+          <div style="font-size:.75rem;color:var(--muted);flex:1">ข้อมูลผู้ป่วย</div>
+          <div class="bed-badge" id="family-bed">—</div>
+        </div>
+        <div style="font-family:'Prompt',sans-serif;font-size:1.2rem;font-weight:600;color:#fff" id="family-name-big">—</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.8rem" id="family-info">—</div>
+        <div class="pt-vitals" id="family-vitals">
+          <div><div class="vt-val" id="fv-spo2" style="color:#ff6b6b">—</div><div class="vt-lbl">SpO₂</div></div>
+          <div><div class="vt-val" id="fv-hr" style="color:#ffd166">—</div><div class="vt-lbl">HR</div></div>
+          <div><div class="vt-val" id="fv-bp" style="color:#06d6a0">—</div><div class="vt-lbl">BP</div></div>
+          <div><div class="vt-val" id="fv-temp" style="color:#74b9ff">—</div><div class="vt-lbl">Temp</div></div>
+        </div>
+      </div>
+
+      <!-- Latest update -->
+      <div class="sec-title">📋 อัปเดตล่าสุดจากพยาบาล</div>
+      <div id="family-latest-update">
+        <div style="text-align:center;color:var(--muted);font-size:.85rem;padding:1rem">กำลังโหลด...</div>
+      </div>
+
+      <!-- Messages -->
+      <div class="sec-title">💬 ข้อความ</div>
+      <div id="family-messages" style="margin-bottom:.8rem">
+        <div style="text-align:center;color:var(--muted);font-size:.85rem;padding:1rem">ยังไม่มีข้อความ</div>
+      </div>
+      <div style="display:flex;gap:.5rem;padding-bottom:1rem">
+        <input class="form-input" id="family-msg-input" type="text" placeholder="พิมพ์ข้อความ..." style="flex:1">
+        <button class="submit-btn" style="width:auto;padding:.72rem 1.2rem;margin:0" onclick="familySendMsg()">ส่ง</button>
+      </div>
+
+      <!-- Patient communication (if patient role) -->
+      <div id="patient-comm-section">
+        <div class="sec-title">🗣️ สื่อสารกับพยาบาล</div>
+        <div class="need-grid">
+          <button class="need-btn" onclick="familySendNeed('😣','ปวด')"><div class="need-emoji">😣</div><div class="need-lbl">ปวด</div></button>
+          <button class="need-btn" onclick="familySendNeed('🥶','หนาว')"><div class="need-emoji">🥶</div><div class="need-lbl">หนาว</div></button>
+          <button class="need-btn" onclick="familySendNeed('🥵','ร้อน')"><div class="need-emoji">🥵</div><div class="need-lbl">ร้อน</div></button>
+          <button class="need-btn" onclick="familySendNeed('😰','กลัว')"><div class="need-emoji">😰</div><div class="need-lbl">กลัว</div></button>
+          <button class="need-btn" onclick="familySendNeed('💧','กระหาย')"><div class="need-emoji">💧</div><div class="need-lbl">กระหาย</div></button>
+          <button class="need-btn" onclick="familySendNeed('🙏','ขอบคุณ')"><div class="need-emoji">🙏</div><div class="need-lbl">ขอบคุณ</div></button>
+          <button class="need-btn" onclick="familySendNeed('👍','โอเค')"><div class="need-emoji">👍</div><div class="need-lbl">โอเค</div></button>
+          <button class="need-btn" onclick="familySendNeed('😴','ง่วง')"><div class="need-emoji">😴</div><div class="need-lbl">ง่วง</div></button>
+          <button class="need-btn" onclick="familySendNeed('🤢','คลื่นไส้')"><div class="need-emoji">🤢</div><div class="need-lbl">คลื่นไส้</div></button>
+        </div>
+        <div class="sec-title">ระดับความปวด</div>
+        <div class="card">
+          <div class="pain-grid" style="margin-bottom:.5rem">
+            <button class="pain-btn" style="background:#4ade80" onclick="familySetPain(0)">0</button>
+            <button class="pain-btn" style="background:#86efac" onclick="familySetPain(1)">1</button>
+            <button class="pain-btn" style="background:#fde047" onclick="familySetPain(2)">2</button>
+            <button class="pain-btn" style="background:#fb923c;color:#fff" onclick="familySetPain(3)">3</button>
+            <button class="pain-btn" style="background:#f87171;color:#fff" onclick="familySetPain(4)">4</button>
+            <button class="pain-btn" style="background:#ef4444;color:#fff" onclick="familySetPain(5)">5</button>
+          </div>
+          <div class="pain-grid">
+            <button class="pain-btn" style="background:#dc2626;color:#fff" onclick="familySetPain(6)">6</button>
+            <button class="pain-btn" style="background:#b91c1c;color:#fff" onclick="familySetPain(7)">7</button>
+            <button class="pain-btn" style="background:#991b1b;color:#fff" onclick="familySetPain(8)">8</button>
+            <button class="pain-btn" style="background:#7f1d1d;color:#fff" onclick="familySetPain(9)">9</button>
+            <button class="pain-btn" style="background:#450a0a;color:#fff" onclick="familySetPain(10)">10</button>
+            <div style="display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--muted)">กด</div>
+          </div>
+          <div id="family-pain-result" style="margin-top:.7rem;text-align:center;font-size:.85rem;color:var(--muted);padding:.6rem;background:rgba(255,255,255,.03);border-radius:8px">กดตัวเลขเพื่อแจ้งระดับความปวด</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NURSE APP -->
+<div id="screen-app" class="hidden">
+  <div class="topbar">
+    <button class="tb-back hidden" id="back-btn" onclick="goBack()">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="tb-center">
+      <div class="tb-title" id="tb-title">ICU HEART</div>
+      <div class="tb-sub" id="tb-sub">พยาบาล</div>
+    </div>
+    <div class="tb-avatar" id="tb-avatar" onclick="showProfile()">👩‍⚕️</div>
+  </div>
+
+  <div class="page-container" id="pages">
+
+    <!-- PATIENT LIST -->
+    <div class="page active" id="pg-patients">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div style="font-family:'Prompt',sans-serif;font-size:1.1rem;font-weight:600;color:#fff">รายชื่อผู้ป่วย ICU</div>
+        <button onclick="openAddPatient()" style="background:var(--blue);border:none;border-radius:10px;padding:7px 14px;color:#000;font-weight:700;font-size:.85rem;cursor:pointer">+ เพิ่มผู้ป่วย</button>
+      </div>
+      <div id="patient-list"><div class="spinner"></div></div>
+    </div>
+
+    <!-- PATIENT DETAIL (nurse) -->
+    <div class="page" id="pg-detail">
+      <!-- Patient header card -->
+      <div class="card" style="background:linear-gradient(135deg,#1a3a5c,#0d2a44);border:1px solid rgba(79,195,247,.25)">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+          <div class="pulse-dot"></div>
+          <div style="font-size:.75rem;color:var(--muted);flex:1">ผู้ป่วย</div>
+          <div class="bed-badge" id="detail-bed">—</div>
+          <button onclick="showQR()" style="background:rgba(255,209,102,.15);border:1px solid rgba(255,209,102,.3);border-radius:8px;padding:3px 10px;font-size:.72rem;color:var(--gold);cursor:pointer">📱 QR</button>
+        </div>
+        <div style="font-family:'Prompt',sans-serif;font-size:1.1rem;font-weight:600;color:#fff" id="detail-name">—</div>
+        <div style="font-size:.76rem;color:var(--muted);margin-bottom:.8rem" id="detail-info">—</div>
+        <div class="pt-vitals">
+          <div><div class="vt-val" id="d-spo2" style="color:#ff6b6b">—</div><div class="vt-lbl">SpO₂</div></div>
+          <div><div class="vt-val" id="d-hr" style="color:#ffd166">—</div><div class="vt-lbl">HR</div></div>
+          <div><div class="vt-val" id="d-bp" style="color:#06d6a0">—</div><div class="vt-lbl">BP</div></div>
+          <div><div class="vt-val" id="d-temp" style="color:#74b9ff">—</div><div class="vt-lbl">Temp</div></div>
+        </div>
+        <button onclick="openEditVitals()" style="width:100%;padding:.6rem;border-radius:8px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.2);color:var(--blue);font-size:.82rem;cursor:pointer;font-family:'Sarabun',sans-serif;margin-top:.3rem">✏️ แก้ไข Vitals</button>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" id="dt-feed" onclick="switchDetailTab('feed')">🔴 Live</button>
+        <button class="tab-btn" id="dt-update" onclick="switchDetailTab('update')">📋 อัปเดต</button>
+        <button class="tab-btn" id="dt-msg" onclick="switchDetailTab('msg')">💬 ข้อความ</button>
+        <button class="tab-btn" id="dt-assess" onclick="switchDetailTab('assess')">📊 ประเมิน</button>
+      </div>
+
+      <!-- Live Feed -->
+      <div class="tab-content active" id="dc-feed">
+        <div id="detail-feed"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Update -->
+      <div class="tab-content" id="dc-update">
+        <div class="card">
+          <label class="form-label">สรุปสภาพผู้ป่วย</label>
+          <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.7rem">
+            <button class="tab-btn active" onclick="useTmpl(0,this)" style="font-size:.75rem">😊 สบายดี</button>
+            <button class="tab-btn active" onclick="useTmpl(1,this)" style="font-size:.75rem">😴 พักผ่อน</button>
+            <button class="tab-btn active" onclick="useTmpl(2,this)" style="font-size:.75rem">💪 ก้าวหน้า</button>
+          </div>
+          <textarea class="form-input" id="upd-text" rows="3" placeholder="สรุปสภาพผู้ป่วย..."></textarea>
+          <label class="form-label" style="margin-top:.9rem">อาการเด่น</label>
+          <label class="chk-row"><input type="checkbox" id="c1"><span>✅ ลืมตาตาม</span></label>
+          <label class="chk-row"><input type="checkbox" id="c2"><span>✅ บีบมือได้</span></label>
+          <label class="chk-row"><input type="checkbox" id="c3"><span>✅ หายใจเองได้</span></label>
+          <label class="chk-row"><input type="checkbox" id="c4"><span>✅ ลดยาได้</span></label>
+          <button class="submit-btn" onclick="sendUpdate()">📤 ส่งอัปเดต</button>
+        </div>
+        <div class="sec-title">ประวัติอัปเดต</div>
+        <div id="detail-updates"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Messages -->
+      <div class="tab-content" id="dc-msg">
+        <div id="detail-messages" style="margin-bottom:.8rem"><div class="spinner"></div></div>
+        <div style="display:flex;gap:.5rem">
+          <input class="form-input" id="nurse-msg-input" type="text" placeholder="พิมพ์ข้อความ..." style="flex:1">
+          <button class="submit-btn" style="width:auto;padding:.72rem 1.2rem;margin:0" onclick="nurseSendMsg()">ส่ง</button>
+        </div>
+      </div>
+
+      <!-- Assessment -->
+      <div class="tab-content" id="dc-assess">
+        <div class="card">
+          <div style="text-align:center;padding:.5rem">
+            <div style="font-size:.76rem;color:var(--muted)">Anxiety Score วันนี้</div>
+            <div style="font-family:'Prompt',sans-serif;font-size:3rem;font-weight:700;color:#fff" id="stai-num">4</div>
+            <div style="font-size:.9rem;font-weight:600;margin-top:.2rem" id="stai-lbl" style="color:var(--green)">วิตกกังวลน้อย</div>
+          </div>
+          <input type="range" class="stai-sl" min="0" max="10" value="4" oninput="updSTAI(this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted)"><span>0 ไม่วิตก</span><span>10 วิตกมาก</span></div>
+        </div>
+        <div class="sec-title">CAM-ICU</div>
+        <div class="cam-item"><div class="cam-q">1. มีอาการเปลี่ยนแปลงเฉียบพลัน?</div><div class="cam-row"><button class="cam-y" id="c1y" onclick="setCAM(1,'y')">✓ ใช่</button><button class="cam-n" id="c1n" onclick="setCAM(1,'n')">✗ ไม่ใช่</button></div></div>
+        <div class="cam-item"><div class="cam-q">2. ความสนใจไม่ต่อเนื่อง?</div><div class="cam-row"><button class="cam-y" id="c2y" onclick="setCAM(2,'y')">✓ ใช่</button><button class="cam-n" id="c2n" onclick="setCAM(2,'n')">✗ ไม่ใช่</button></div></div>
+        <div class="cam-item"><div class="cam-q">3. ระดับความรู้สึกผิดปกติ?</div><div class="cam-row"><button class="cam-y" id="c3y" onclick="setCAM(3,'y')">✓ ใช่</button><button class="cam-n" id="c3n" onclick="setCAM(3,'n')">✗ ไม่ใช่</button></div></div>
+        <div id="cam-result" class="hidden" style="background:rgba(255,209,102,.1);border:1px solid rgba(255,209,102,.3);border-radius:10px;padding:.8rem;font-size:.85rem;color:var(--gold);margin:1rem 0"></div>
+        <button class="submit-btn" onclick="saveAssess()">💾 บันทึกประเมิน</button>
+        <div class="sec-title">ประวัติการประเมิน</div>
+        <div id="detail-assess"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="page" id="pg-admin">
+      <div style="font-family:'Prompt',sans-serif;font-size:1.1rem;font-weight:600;color:#fff;margin-bottom:1rem">👑 Admin Panel</div>
+      <div class="card" style="margin-bottom:1rem">
+        <label class="form-label">➕ เพิ่มพยาบาล/บุคลากร</label>
+        <div class="input-row">
+          <input class="form-input" id="new-member-email" type="email" placeholder="email@gmail.com" style="flex:1">
+          <button class="submit-btn" style="width:auto;padding:.72rem 1.2rem;margin:0" onclick="addMember()">เพิ่ม</button>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-top:.7rem">
+          <button id="role-member-btn" class="tab-btn active" data-role="member" onclick="selectNewRole(this)" style="flex:1">👤 Member</button>
+          <button id="role-admin-btn" class="tab-btn" data-role="admin" onclick="selectNewRole(this)" style="flex:1">👑 Admin</button>
+        </div>
+      </div>
+      <div class="sec-title">👥 บุคลากรทั้งหมด</div>
+      <div id="members-list"><div class="spinner"></div></div>
+      <div class="sec-title" style="margin-top:1.5rem">📦 Export ข้อมูล</div>
+      <button data-path="all" onclick="exportData(this.dataset.path)" style="width:100%;padding:.95rem;border-radius:var(--r);background:linear-gradient(135deg,var(--gold),#ffaa00);color:#000;font-size:.95rem;font-weight:700;margin-bottom:.5rem;cursor:pointer">📥 Export ข้อมูลทั้งหมด</button>
+    </div>
+
+  </div><!-- pages -->
+
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nb-patients" onclick="navTo('patients',this)"><div class="nav-icon">🏥</div><div class="nav-lbl">ผู้ป่วย</div></button>
+    <button class="nav-btn" id="nb-admin" onclick="navTo('admin',this);loadAdminPanel()"><div class="nav-icon">👑</div><div class="nav-lbl">Admin</div></button>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-ov hidden" id="modal-ov" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="mh"></div>
+    <div id="modal-body"></div>
+    <button class="modal-close" onclick="closeModal()">ปิด</button>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+
+<script>
+// ================================================================
+// STATE
+// ================================================================
+const S = {
+  user: null, role: null,
+  patients: {},
+  activePatientId: null,
+  newMemberRole: 'member',
+  cam: {},
+  // Family/patient state
+  familyPatientId: null,
+  familyMode: null, // 'family' | 'patient'
+};
+
+const TEMPLATES = [
+  "ผู้ป่วยสบายดี ผ่อนคลาย หายใจสม่ำเสมอ สัญญาณชีพคงที่ 😊",
+  "ผู้ป่วยพักผ่อนหลับได้ดี ดูสงบและผ่อนคลาย 😴",
+  "วันนี้มีความก้าวหน้า! หายใจเองได้มากขึ้น ทีมดีใจมากค่ะ 💪"
+];
+
+// ================================================================
+// FIREBASE HELPERS
+// ================================================================
+function fb() { return window._fb; }
+function emailToKey(email){ return email.replace(/\./g,'_').replace(/@/g,'__at__'); }
+
+function dbPush(path, data){
+  const {db,ref,push,serverTimestamp}=fb();
+  const name = S.user?.displayName||S.user?.email||'พยาบาล';
+  return push(ref(db,path),{...data,ts:serverTimestamp(),by:name,uid:S.user?.uid});
+}
+function dbSet(path,data){ const {db,ref,set}=fb(); return set(ref(db,path),data); }
+function dbGet(path){ const {db,ref,get}=fb(); return get(ref(db,path)); }
+function dbListen(path,cb){ const {db,ref,onValue}=fb(); onValue(ref(db,path),cb); }
+function dbRemove(path){ const {db,ref,remove}=fb(); return remove(ref(db,path)); }
+function dbUpdate(path,data){ const {db,ref,update}=fb(); return update(ref(db,path),data); }
+
+// ================================================================
+// BOOT
+// ================================================================
+document.addEventListener('firebase-ready',()=>{
+  const {auth,onAuthStateChanged}=fb();
+
+  // Check if QR access (family/patient)
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('patient');
+  const mode = urlParams.get('mode')||'family'; // family | patient
+
+  if(token){
+    // QR access — no login needed
+    S.familyMode = mode;
+    hideSplash();
+    loadFamilyView(token);
+    return;
+  }
+
+  // Nurse login flow
+  onAuthStateChanged(auth, async(user)=>{
+    hideSplash();
+    if(!user){ showScreen('login'); return; }
+    S.user = user;
+    await checkAccess(user);
+  });
+
+  setTimeout(()=>{ if(document.getElementById('splash').style.opacity!=='0') hideSplash(); },3000);
+});
+
+function hideSplash(){
+  const s=document.getElementById('splash');
+  s.style.opacity='0';
+  setTimeout(()=>s.classList.add('hidden'),500);
+}
+
+function showScreen(name){
+  ['login','denied','app','family'].forEach(s=>{
+    document.getElementById('screen-'+s).classList.toggle('hidden', s!==name);
+  });
+}
+
+// ================================================================
+// NURSE AUTH
+// ================================================================
+async function checkAccess(user){
+  const key=emailToKey(user.email);
+  const membersSnap=await dbGet('members');
+  const members=membersSnap?.val()||{};
+
+  if(Object.keys(members).length===0){
+    await dbSet('members/'+key,{email:user.email,name:user.displayName||user.email,photo:user.photoURL||'',role:'admin',addedAt:Date.now()});
+    S.role='admin'; enterNurseApp(user); return;
+  }
+
+  const memberData=members[key];
+  if(!memberData){ document.getElementById('denied-email').textContent=user.email; showScreen('denied'); return; }
+  S.role=memberData.role||'member';
+  enterNurseApp(user);
+}
+
+function enterNurseApp(user){
+  showScreen('app');
+  const name=user.displayName||user.email;
+  document.getElementById('tb-sub').textContent=name;
+  if(user.photoURL) document.getElementById('tb-avatar').innerHTML=`<img src="${user.photoURL}" alt="avatar">`;
+  else document.getElementById('tb-avatar').textContent='👩‍⚕️';
+  if(S.role!=='admin') document.getElementById('nb-admin').classList.add('hidden');
+  listenPatients();
+}
+
+async function doGoogleLogin(){
+  try{
+    const {auth,provider,signInWithPopup}=fb();
+    await signInWithPopup(auth,provider);
+  }catch(e){
+    if(e.code!=='auth/popup-closed-by-user') document.getElementById('login-error').style.display='block';
+  }
+}
+
+async function doSignOut(){
+  const {auth,signOut}=fb();
+  await signOut(auth);
+  S.user=null; S.role=null;
+  showScreen('login');
+}
+
+// ================================================================
+// PATIENT LIST (nurse)
+// ================================================================
+function listenPatients(){
+  dbListen('patients', snap=>{
+    const data=snap.val()||{};
+    S.patients=data;
+    renderPatientList(data);
+  });
+}
+
+function renderPatientList(data){
+  const el=document.getElementById('patient-list');
+  const items=Object.entries(data).sort((a,b)=>(a[1].bed||'').localeCompare(b[1].bed||''));
+  if(!items.length){
+    el.innerHTML=`<div style="text-align:center;padding:2rem;color:var(--muted)">
+      <div style="font-size:3rem;margin-bottom:1rem">🏥</div>
+      <div>ยังไม่มีผู้ป่วย</div><div style="font-size:.8rem;margin-top:.3rem">กด "+ เพิ่มผู้ป่วย" เพื่อเริ่มต้น</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML=items.map(([id,p])=>`
+    <div class="pt-card" data-id="${id}" onclick="openPatient('${id}')">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+        <div class="pulse-dot"></div>
+        <div style="font-size:.75rem;color:var(--muted);flex:1">เตียง ${p.bed||'—'}</div>
+        <span class="bed-badge">Bed ${p.bed||'—'}</span>
+      </div>
+      <div style="font-family:'Prompt',sans-serif;font-size:1rem;font-weight:600;color:#fff">${p.name||'—'}</div>
+      <div style="font-size:.75rem;color:var(--muted);margin:.3rem 0">${p.age?p.age+' ปี':''} ${p.diagnosis||''}</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;margin-top:.6rem">
+        <div><div class="vt-val" style="color:#ff6b6b;font-size:.85rem">${p.vitals?.spo2||'—'}%</div><div class="vt-lbl">SpO₂</div></div>
+        <div><div class="vt-val" style="color:#ffd166;font-size:.85rem">${p.vitals?.hr||'—'}</div><div class="vt-lbl">HR</div></div>
+        <div><div class="vt-val" style="color:#06d6a0;font-size:.85rem">${p.vitals?.bp||'—'}</div><div class="vt-lbl">BP</div></div>
+        <div><div class="vt-val" style="color:#74b9ff;font-size:.85rem">${p.vitals?.temp||'—'}</div><div class="vt-lbl">Temp</div></div>
+      </div>
+    </div>`).join('');
+}
+
+// ================================================================
+// PATIENT DETAIL (nurse)
+// ================================================================
+function openPatient(id){
+  S.activePatientId=id;
+  const p=S.patients[id]||{};
+  document.getElementById('detail-bed').textContent='Bed '+(p.bed||'—');
+  document.getElementById('detail-name').textContent=p.name||'—';
+  document.getElementById('detail-info').textContent=[p.age?p.age+' ปี':'',p.diagnosis||''].filter(Boolean).join(' • ');
+  document.getElementById('d-spo2').textContent=(p.vitals?.spo2||'—')+'%';
+  document.getElementById('d-hr').textContent=p.vitals?.hr||'—';
+  document.getElementById('d-bp').textContent=p.vitals?.bp||'—';
+  document.getElementById('d-temp').textContent=p.vitals?.temp||'—';
+  document.getElementById('tb-title').textContent=p.name||'ผู้ป่วย';
+  showPage('detail');
+  document.getElementById('back-btn').classList.remove('hidden');
+  // Listen realtime
+  listenFeed(id); listenUpdates(id); listenMessages(id); listenAssess(id);
+}
+
+function listenFeed(pid){
+  dbListen('patients/'+pid+'/activity', snap=>{
+    const data=snap.val()||{};
+    const items=Object.values(data).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,15);
+    const el=document.getElementById('detail-feed');
+    if(!items.length){ el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem">ยังไม่มีกิจกรรม</div>'; return; }
+    el.innerHTML=items.map(i=>`
+      <div class="live-item">
+        <div class="live-ava" style="background:rgba(79,195,247,.12)">💙</div>
+        <div class="live-body">
+          <div class="live-who"><strong>${i.by||'?'}</strong> ${i.action||''}</div>
+          <div class="live-text">${i.text||''}</div>
+          <div class="live-time">${renderTime(i.ts)}</div>
+        </div>
+      </div>`).join('');
+  });
+}
+
+function listenUpdates(pid){
+  dbListen('patients/'+pid+'/updates', snap=>{
+    const data=snap.val()||{};
+    const items=Object.values(data).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,5);
+    const el=document.getElementById('detail-updates');
+    if(!items.length){ el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem">ยังไม่มีอัปเดต</div>'; return; }
+    el.innerHTML=items.map(i=>`
+      <div class="card" style="border-left:3px solid var(--blue);margin-bottom:.7rem">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:.4rem">${i.by||''} • ${renderTime(i.ts)}</div>
+        <div style="font-size:.88rem;color:var(--text);line-height:1.55">${i.text||''}</div>
+        ${i.symptoms?`<div style="margin-top:.5rem;font-size:.75rem;color:var(--teal)">${i.symptoms}</div>`:''}
+      </div>`).join('');
+  });
+}
+
+function listenMessages(pid){
+  dbListen('patients/'+pid+'/messages', snap=>{
+    const data=snap.val()||{};
+    const items=Object.values(data).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const el=document.getElementById('detail-messages');
+    if(!items.length){ el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem">ยังไม่มีข้อความ</div>'; return; }
+    el.innerHTML=items.map(i=>{
+      const isNurse=i.source==='nurse';
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${isNurse?'var(--blue)':'var(--rose)'};border-radius:var(--r);padding:.85rem;margin-bottom:.6rem">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:.3rem">${isNurse?'👩‍⚕️':'💙'} <strong style="color:var(--text)">${i.by||'?'}</strong></div>
+        <div style="font-size:.88rem;color:#fff">${i.text||''}</div>
+        <div style="font-size:.66rem;color:var(--muted);margin-top:.3rem">${renderTime(i.ts)}</div>
+      </div>`;
+    }).join('');
+  });
+}
+
+function listenAssess(pid){
+  dbListen('patients/'+pid+'/assessments', snap=>{
+    const data=snap.val()||{};
+    const items=Object.values(data).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,5);
+    const el=document.getElementById('detail-assess');
+    if(!items.length){ el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem">ยังไม่มีข้อมูล</div>'; return; }
+    el.innerHTML=items.map(i=>`
+      <div style="display:flex;gap:.7rem;padding:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:.45rem">
+        <div style="font-size:1.3rem">📊</div>
+        <div>
+          <div style="font-size:.86rem;color:#fff">Anxiety: <strong>${i.stai||0}/10</strong> | CAM: <strong style="color:${i.camPos>=2?'var(--rose)':'var(--green)'}">${i.camPos>=2?'Positive':'Negative'}</strong></div>
+          <div style="font-size:.7rem;color:var(--muted)">${i.by||''} • ${renderTime(i.ts)}</div>
+        </div>
+      </div>`).join('');
+  });
+}
+
+// ================================================================
+// NURSE ACTIONS
+// ================================================================
+function sendUpdate(){
+  const pid=S.activePatientId; if(!pid) return;
+  const text=document.getElementById('upd-text').value.trim();
+  if(!text){ toast('กรุณาพิมพ์สรุปสภาพผู้ป่วย','err'); return; }
+  const syms=[];
+  if(document.getElementById('c1').checked) syms.push('ลืมตาตาม');
+  if(document.getElementById('c2').checked) syms.push('บีบมือได้');
+  if(document.getElementById('c3').checked) syms.push('หายใจเองได้');
+  if(document.getElementById('c4').checked) syms.push('ลดยาได้');
+  dbPush('patients/'+pid+'/updates',{text,symptoms:syms.join(' • ')});
+  dbPush('patients/'+pid+'/activity',{action:'ส่งอัปเดต',text});
+  document.getElementById('upd-text').value='';
+  ['c1','c2','c3','c4'].forEach(id=>document.getElementById(id).checked=false);
+  toast('📤 ส่งอัปเดตแล้ว');
+}
+
+function nurseSendMsg(){
+  const pid=S.activePatientId; if(!pid) return;
+  const input=document.getElementById('nurse-msg-input');
+  const text=input.value.trim(); if(!text) return;
+  const {db,ref,push,serverTimestamp}=fb();
+  const name=S.user?.displayName||'พยาบาล';
+  push(ref(fb().db,'patients/'+pid+'/messages'),{text,ts:serverTimestamp(),by:name,source:'nurse',uid:S.user?.uid});
+  dbPush('patients/'+pid+'/activity',{action:'ส่งข้อความ',text});
+  input.value=''; toast('✅ ส่งข้อความแล้ว');
+}
+
+function useTmpl(i){ document.getElementById('upd-text').value=TEMPLATES[i]; }
+
+// Assessment
+const STAI_LABELS=['','','ไม่วิตก','ไม่วิตก','วิตกน้อย','วิตกปานกลาง','วิตกปานกลาง','วิตกมาก','วิตกมาก','วิตกมากที่สุด','วิตกมากที่สุด'];
+const STAI_COLORS=['#4ade80','#4ade80','#4ade80','#86efac','#06d6a0','#fde047','#fb923c','#f87171','#ef4444','#dc2626','#b91c1c'];
+function updSTAI(v){ v=parseInt(v); document.getElementById('stai-num').textContent=v; document.getElementById('stai-lbl').textContent=STAI_LABELS[v]||''; document.getElementById('stai-lbl').style.color=STAI_COLORS[v]; }
+function setCAM(num,val){
+  S.cam[num]=val;
+  document.getElementById('c'+num+'y').classList.toggle('sel',val==='y');
+  document.getElementById('c'+num+'n').classList.toggle('sel',val==='n');
+  if(Object.keys(S.cam).length===3){
+    const pos=Object.values(S.cam).filter(v=>v==='y').length;
+    const el=document.getElementById('cam-result'); el.classList.remove('hidden');
+    if(pos>=2){ el.style.color='var(--rose)'; el.textContent=`⚠️ CAM-ICU Positive (${pos}/3)`; }
+    else{ el.style.color='var(--green)'; el.textContent=`✅ CAM-ICU Negative (${pos}/3)`; }
+  }
+}
+function saveAssess(){
+  const pid=S.activePatientId; if(!pid) return;
+  const stai=parseInt(document.querySelector('.stai-sl').value);
+  const camPos=Object.values(S.cam).filter(v=>v==='y').length;
+  dbPush('patients/'+pid+'/assessments',{stai,camPos});
+  dbPush('patients/'+pid+'/activity',{action:'บันทึกประเมิน',text:`Anxiety ${stai}/10 | CAM ${camPos>=2?'Positive':'Negative'}`});
+  toast('💾 บันทึกประเมินแล้ว');
+}
+
+// ================================================================
+// ADD PATIENT
+// ================================================================
+function openAddPatient(){
+  showModal(`
+    <div style="font-family:'Prompt',sans-serif;font-size:1.1rem;font-weight:600;color:#fff;margin-bottom:1rem">➕ เพิ่มผู้ป่วยใหม่</div>
+    <div class="fg" style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px">
+      <label class="form-label">ชื่อ-นามสกุล</label>
+      <input class="form-input" id="np-name" placeholder="เช่น นางสมศรี ใจดี" type="text">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><label class="form-label">เตียง</label><input class="form-input" id="np-bed" placeholder="3" type="text"></div>
+      <div><label class="form-label">อายุ</label><input class="form-input" id="np-age" placeholder="68" type="number"></div>
+    </div>
+    <div style="margin-bottom:12px"><label class="form-label">การวินิจฉัย</label><input class="form-input" id="np-diag" placeholder="Ventilator Day 3, GCS 8..." type="text"></div>
+    <div style="font-size:.85rem;color:var(--muted);margin-bottom:.5rem">Vitals เริ่มต้น</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><label class="form-label">SpO₂ (%)</label><input class="form-input" id="np-spo2" placeholder="98" type="text"></div>
+      <div><label class="form-label">HR</label><input class="form-input" id="np-hr" placeholder="72" type="text"></div>
+      <div><label class="form-label">BP</label><input class="form-input" id="np-bp" placeholder="120/80" type="text"></div>
+      <div><label class="form-label">Temp (°C)</label><input class="form-input" id="np-temp" placeholder="37.0" type="text"></div>
+    </div>
+    <button class="submit-btn" onclick="saveNewPatient()">✅ เพิ่มผู้ป่วย</button>
+  `);
+}
+
+async function saveNewPatient(){
+  const name=document.getElementById('np-name').value.trim();
+  const bed=document.getElementById('np-bed').value.trim();
+  if(!name||!bed){ toast('กรุณาใส่ชื่อและเตียง','err'); return; }
+  const {db,ref,push,serverTimestamp}=fb();
+  const token=generateToken();
+  const patientData={
+    name, bed,
+    age:document.getElementById('np-age').value||'',
+    diagnosis:document.getElementById('np-diag').value||'',
+    token,
+    createdAt:Date.now(),
+    createdBy:S.user?.displayName||S.user?.email||'',
+    vitals:{
+      spo2:document.getElementById('np-spo2').value||'—',
+      hr:document.getElementById('np-hr').value||'—',
+      bp:document.getElementById('np-bp').value||'—',
+      temp:document.getElementById('np-temp').value||'—'
+    }
+  };
+  const newRef=await push(ref(fb().db,'patients'),patientData);
+  closeModal();
+  toast('✅ เพิ่มผู้ป่วยแล้ว');
+  // Show QR immediately
+  setTimeout(()=>showQRForId(newRef.key,patientData),500);
+}
+
+// ================================================================
+// EDIT VITALS
+// ================================================================
+function openEditVitals(){
+  const pid=S.activePatientId; if(!pid) return;
+  const p=S.patients[pid]||{};
+  const v=p.vitals||{};
+  showModal(`
+    <div style="font-family:'Prompt',sans-serif;font-size:1rem;font-weight:600;color:#fff;margin-bottom:1rem">✏️ แก้ไข Vitals — ${p.name||''}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><label class="form-label">SpO₂ (%)</label><input class="form-input" id="ev-spo2" value="${v.spo2||''}" type="text"></div>
+      <div><label class="form-label">HR</label><input class="form-input" id="ev-hr" value="${v.hr||''}" type="text"></div>
+      <div><label class="form-label">BP</label><input class="form-input" id="ev-bp" value="${v.bp||''}" type="text"></div>
+      <div><label class="form-label">Temp (°C)</label><input class="form-input" id="ev-temp" value="${v.temp||''}" type="text"></div>
+    </div>
+    <button class="submit-btn" onclick="saveVitals()">💾 บันทึก Vitals</button>
+  `);
+}
+
+async function saveVitals(){
+  const pid=S.activePatientId; if(!pid) return;
+  const vitals={
+    spo2:document.getElementById('ev-spo2').value,
+    hr:document.getElementById('ev-hr').value,
+    bp:document.getElementById('ev-bp').value,
+    temp:document.getElementById('ev-temp').value
+  };
+  await dbUpdate('patients/'+pid+'/vitals',vitals);
+  dbPush('patients/'+pid+'/activity',{action:'แก้ไข Vitals',text:`SpO₂ ${vitals.spo2}% HR ${vitals.hr} BP ${vitals.bp} Temp ${vitals.temp}`});
+  // Update local state
+  if(S.patients[pid]) S.patients[pid].vitals=vitals;
+  document.getElementById('d-spo2').textContent=vitals.spo2+'%';
+  document.getElementById('d-hr').textContent=vitals.hr;
+  document.getElementById('d-bp').textContent=vitals.bp;
+  document.getElementById('d-temp').textContent=vitals.temp;
+  closeModal(); toast('💾 บันทึก Vitals แล้ว');
+}
+
+// ================================================================
+// QR CODE
+// ================================================================
+function generateToken(){ return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+
+function showQR(){
+  const pid=S.activePatientId; if(!pid) return;
+  showQRForId(pid, S.patients[pid]);
+}
+
+function showQRForId(pid, p){
+  const baseUrl=window.location.href.split('?')[0];
+  const familyUrl=`${baseUrl}?patient=${p.token}&mode=family`;
+  const patientUrl=`${baseUrl}?patient=${p.token}&mode=patient`;
+
+  showModal(`
+    <div style="text-align:center">
+      <div style="font-family:'Prompt',sans-serif;font-size:1rem;font-weight:600;color:#fff;margin-bottom:.3rem">📱 QR Code — ${p.name||''}</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">สแกนเพื่อเข้าถึงข้อมูลผู้ป่วย</div>
+    </div>
+
+    <div style="display:flex;gap:1rem;margin-bottom:1rem">
+      <div style="flex:1;text-align:center">
+        <div style="font-size:.8rem;color:var(--blue);margin-bottom:.5rem;font-weight:600">👨‍👩‍👧 ญาติ</div>
+        <div class="qr-container" id="qr-family"></div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:.4rem;word-break:break-all">${familyUrl.slice(0,40)}...</div>
+      </div>
+      <div style="flex:1;text-align:center">
+        <div style="font-size:.8rem;color:var(--rose);margin-bottom:.5rem;font-weight:600">🤝 ผู้ป่วย</div>
+        <div class="qr-container" id="qr-patient"></div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:.4rem;word-break:break-all">${patientUrl.slice(0,40)}...</div>
+      </div>
+    </div>
+
+    <div style="background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2);border-radius:10px;padding:.8rem;font-size:.78rem;color:var(--gold);margin-bottom:.5rem">
+      💡 Print QR นี้ติดที่ห้องผู้ป่วย หรือส่งลิงก์ทาง LINE ให้ญาติ
+    </div>
+
+    <button onclick="copyUrl('${familyUrl}')" style="width:100%;padding:.7rem;border-radius:10px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.25);color:var(--blue);font-size:.85rem;cursor:pointer;font-family:'Sarabun',sans-serif;margin-bottom:.5rem">
+      📋 Copy ลิงก์ญาติ
+    </button>
+    <button onclick="copyUrl('${patientUrl}')" style="width:100%;padding:.7rem;border-radius:10px;background:rgba(255,107,157,.1);border:1px solid rgba(255,107,157,.25);color:var(--rose);font-size:.85rem;cursor:pointer;font-family:'Sarabun',sans-serif">
+      📋 Copy ลิงก์ผู้ป่วย
+    </button>
+  `);
+
+  // Generate QR codes
+  setTimeout(()=>{
+    if(document.getElementById('qr-family')) new QRCode(document.getElementById('qr-family'),{text:familyUrl,width:120,height:120,colorDark:'#000',colorLight:'#fff'});
+    if(document.getElementById('qr-patient')) new QRCode(document.getElementById('qr-patient'),{text:patientUrl,width:120,height:120,colorDark:'#000',colorLight:'#fff'});
+  },100);
+}
+
+function copyUrl(url){
+  if(navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(()=>toast('📋 Copy ลิงก์แล้ว'));
+  else{ const ta=document.createElement('textarea'); ta.value=url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('📋 Copy ลิงก์แล้ว'); }
+}
+
+// ================================================================
+// FAMILY/PATIENT VIEW
+// ================================================================
+async function loadFamilyView(token){
+  // Find patient by token
+  const snap=await dbGet('patients');
+  const patients=snap.val()||{};
+  const entry=Object.entries(patients).find(([id,p])=>p.token===token);
+  if(!entry){ document.getElementById('screen-family').innerHTML='<div style="text-align:center;padding:3rem;color:#ff6b9d;font-size:1.1rem">❌ ไม่พบข้อมูลผู้ป่วย<br><small style="color:#8892b0">QR Code อาจหมดอายุหรือไม่ถูกต้อง</small></div>'; showScreen('family'); return; }
+
+  const [pid,p]=entry;
+  S.familyPatientId=pid;
+
+  // Update UI
+  document.getElementById('family-patient-name').textContent=p.name||'ผู้ป่วย';
+  document.getElementById('family-name-big').textContent=p.name||'—';
+  document.getElementById('family-bed').textContent='Bed '+(p.bed||'—');
+  document.getElementById('family-info').textContent=[p.age?p.age+' ปี':'',p.diagnosis||''].filter(Boolean).join(' • ');
+
+  // Vitals
+  const v=p.vitals||{};
+  document.getElementById('fv-spo2').textContent=(v.spo2||'—')+'%';
+  document.getElementById('fv-hr').textContent=v.hr||'—';
+  document.getElementById('fv-bp').textContent=v.bp||'—';
+  document.getElementById('fv-temp').textContent=v.temp||'—';
+
+  // Show/hide patient comm section
+  const commSection=document.getElementById('patient-comm-section');
+  if(S.familyMode==='family') commSection.style.display='none';
+  else commSection.style.display='';
+
+  showScreen('family');
+  // Listen realtime updates
+  familyListenVitals(pid);
+  familyListenUpdates(pid);
+  familyListenMessages(pid);
+}
+
+function familyListenVitals(pid){
+  dbListen('patients/'+pid+'/vitals', snap=>{
+    const v=snap.val()||{};
+    document.getElementById('fv-spo2').textContent=(v.spo2||'—')+'%';
+    document.getElementById('fv-hr').textContent=v.hr||'—';
+    document.getElementById('fv-bp').textContent=v.bp||'—';
+    document.getElementById('fv-temp').textContent=v.temp||'—';
+  });
+}
+
+function familyListenUpdates(pid){
+  dbListen('patients/'+pid+'/updates', snap=>{
+    const data=snap.val()||{};
+    const items=Object.values(data).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    const el=document.getElementById('family-latest-update');
+    if(!items.length){ el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:1rem">ยังไม่มีอัปเดต</div>'; return; }
+    const latest=items[0];
+    el.innerHTML=`
+      <div class="card" style="border-left:3px solid var(--blue)">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:.4rem">👩‍⚕️ ${latest.by||'พยาบาล'} • ${renderTime(latest.ts)}</div>
+        <div style="font-size:.9rem;color:#fff;line-height:1.6">${latest.text||''}</div>
+        ${latest.symptoms?`<div style="margin-top:.5rem;font-size:.78rem;color:var(--teal)">✅ ${latest.symptoms}</div>`:''}
+      </div>
+      ${items.length>1?`<div style="font-size:.75rem;color:var(--muted);text-align:center;padding:.5rem">และอีก ${items.length-1} อัปเดตก่อนหน้า</div>`:''}
+    `;
+  });
+}
+
+function familyListenMessages(pid){
+  dbListen('patients/'+pid+'/messages', snap=>{
+    const data=snap.val()||{};
+    const items=Object.values(data).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const el=document.getElementById('family-messages');
+    if(!items.length){ el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:1rem">ยังไม่มีข้อความ</div>'; return; }
+    el.innerHTML=items.map(i=>{
+      const isNurse=i.source==='nurse';
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${isNurse?'var(--blue)':'var(--rose)'};border-radius:var(--r);padding:.85rem;margin-bottom:.6rem">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:.3rem">${isNurse?'👩‍⚕️ พยาบาล':'💙 '+(S.familyMode==='patient'?'คุณ':'ครอบครัว')}</div>
+        <div style="font-size:.88rem;color:#fff">${i.text||''}</div>
+        <div style="font-size:.66rem;color:var(--muted);margin-top:.3rem">${renderTime(i.ts)}</div>
+      </div>`;
+    }).join('');
+  });
+}
+
+function familySendMsg(){
+  const pid=S.familyPatientId; if(!pid) return;
+  const input=document.getElementById('family-msg-input');
+  const text=input.value.trim(); if(!text) return;
+  const {db,ref,push,serverTimestamp}=fb();
+  const by=S.familyMode==='patient'?'ผู้ป่วย':'ครอบครัว';
+  push(ref(fb().db,'patients/'+pid+'/messages'),{text,ts:serverTimestamp(),by,source:S.familyMode,uid:'anon'});
+  push(ref(fb().db,'patients/'+pid+'/activity'),{text,ts:serverTimestamp(),by,action:'ส่งข้อความ',source:S.familyMode});
+  input.value=''; toast('✅ ส่งข้อความแล้ว');
+}
+
+function familySendNeed(emoji,need){
+  const pid=S.familyPatientId; if(!pid) return;
+  if(navigator.vibrate) navigator.vibrate([100,50,100]);
+  const {db,ref,push,serverTimestamp}=fb();
+  push(ref(fb().db,'patients/'+pid+'/activity'),{action:'แจ้งความต้องการ',text:`${emoji} ${need}`,ts:serverTimestamp(),by:'ผู้ป่วย',source:'patient'});
+  push(ref(fb().db,'patients/'+pid+'/messages'),{text:`${emoji} ${need}`,ts:serverTimestamp(),by:'ผู้ป่วย',source:'patient',uid:'anon'});
+  toast(`✅ แจ้ง "${need}" ไปยังพยาบาลแล้ว`);
+}
+
+function familySetPain(val){
+  const pid=S.familyPatientId; if(!pid) return;
+  document.querySelectorAll('.pain-btn').forEach((b,i)=>b.classList.toggle('sel',i===val));
+  const labels=['ไม่เจ็บ 😊','น้อยมาก','น้อย','พอทน','ปานกลาง','พอสมควร','มาก','มากขึ้น','ทนไม่ได้','มากที่สุด','ทนไม่ได้เลย 😭'];
+  const colors=['#4ade80','#86efac','#bef264','#fde047','#fb923c','#f87171','#ef4444','#dc2626','#b91c1c','#991b1b','#7f1d1d'];
+  const r=document.getElementById('family-pain-result');
+  r.textContent=`ระดับ ${val}/10 — ${labels[val]}`;
+  r.style.color=colors[val];
+  const {db,ref,push,serverTimestamp}=fb();
+  push(ref(fb().db,'patients/'+pid+'/activity'),{action:'แจ้งความปวด',text:`ระดับ ${val}/10`,ts:serverTimestamp(),by:'ผู้ป่วย',source:'patient'});
+  push(ref(fb().db,'patients/'+pid+'/messages'),{text:`😣 ปวดระดับ ${val}/10`,ts:serverTimestamp(),by:'ผู้ป่วย',source:'patient',uid:'anon'});
+  if(val>=7){ toast(`⚠️ ความปวดระดับ ${val} — แจ้งพยาบาลแล้ว!`,'err'); if(navigator.vibrate) navigator.vibrate([200,100,200]); }
+  else toast(`แจ้งความปวดระดับ ${val} แล้ว`);
+}
+
+// ================================================================
+// ADMIN PANEL
+// ================================================================
+function loadAdminPanel(){
+  dbListen('members', snap=>{
+    const data=snap.val()||{};
+    const el=document.getElementById('members-list');
+    const items=Object.entries(data).sort((a,b)=>(a[1].addedAt||0)-(b[1].addedAt||0));
+    if(!items.length){ el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem">ยังไม่มีสมาชิก</div>'; return; }
+    el.innerHTML=items.map(([key,m])=>`
+      <div class="member-row">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${m.photo?`<img src="${m.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover">`:'👤'}</div>
+        <div class="member-info">
+          <div class="member-name">${m.name||m.email||'—'}</div>
+          <div class="member-email">${m.email||''}</div>
+          <span style="font-size:.65rem;padding:2px 7px;border-radius:20px;${m.role==='admin'?'background:rgba(255,209,102,.15);color:var(--gold)':'background:rgba(79,195,247,.12);color:var(--blue)'}">${m.role==='admin'?'👑 Admin':'👤 Member'}</span>
+        </div>
+        ${m.email!==S.user?.email?`<button class="del-btn" data-key="${key}" onclick="removeMember(this.dataset.key,'${m.email}')">✕</button>`:'<span style="font-size:.72rem;color:var(--muted)">คุณ</span>'}
+      </div>`).join('');
+  });
+}
+
+function selectNewRole(btn){
+  S.newMemberRole=btn.dataset.role;
+  document.querySelectorAll('#nb-admin~* .tab-btn[data-role], .page #role-member-btn, .page #role-admin-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('role-member-btn').classList.toggle('active',S.newMemberRole==='member');
+  document.getElementById('role-admin-btn').classList.toggle('active',S.newMemberRole==='admin');
+}
+
+async function addMember(){
+  if(S.role!=='admin') return;
+  const email=(document.getElementById('new-member-email').value||'').trim().toLowerCase();
+  if(!email||!email.includes('@')){ toast('กรุณาใส่อีเมลให้ถูกต้อง','err'); return; }
+  const key=emailToKey(email);
+  const snap=await dbGet('members/'+key);
+  if(snap.val()){ toast('อีเมลนี้มีอยู่แล้ว','err'); return; }
+  await dbSet('members/'+key,{email,name:email.split('@')[0],photo:'',role:S.newMemberRole,addedAt:Date.now(),addedBy:S.user?.email||''});
+  document.getElementById('new-member-email').value='';
+  toast(`✅ เพิ่ม ${email} สำเร็จ`);
+}
+
+async function removeMember(key,email){
+  if(S.role!=='admin') return;
+  if(!confirm(`ลบ ${email} ออกจากระบบ?`)) return;
+  await dbRemove('members/'+key);
+  toast(`ลบ ${email} แล้ว`);
+}
+
+async function exportData(path){
+  if(S.role!=='admin') return;
+  toast('กำลังโหลด...');
+  try{
+    const snap=await dbGet(path==='all'?'/':'patients');
+    const data=snap.val()||{};
+    const json=JSON.stringify(data,null,2);
+    const date=new Date().toISOString().split('T')[0];
+    showExportModal(json,`ICU_HEART_${date}`);
+  }catch(e){ toast('Export ไม่สำเร็จ','err'); }
+}
+
+function showExportModal(json,filename){
+  const old=document.getElementById('xm'); if(old) old.remove();
+  const o=document.createElement('div'); o.id='xm';
+  o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;display:flex;flex-direction:column;padding:16px;gap:10px;box-sizing:border-box;';
+  const hdr=document.createElement('div'); hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;flex-shrink:0';
+  const ttl=document.createElement('div'); ttl.innerHTML=`<div style="font-size:16px;font-weight:700;color:#fff">${filename}</div>`;
+  const cls=document.createElement('button'); cls.textContent='✕'; cls.onclick=()=>o.remove(); cls.style.cssText='background:none;border:none;color:#8892b0;font-size:22px;cursor:pointer';
+  hdr.appendChild(ttl); hdr.appendChild(cls);
+  const ta=document.createElement('textarea'); ta.readOnly=true; ta.value=json;
+  ta.style.cssText='flex:1;background:#0b1f3a;border:1px solid rgba(79,195,247,.2);border-radius:8px;color:#4fc3f7;font-family:monospace;font-size:10px;padding:10px;resize:none;';
+  const cpb=document.createElement('button'); cpb.textContent='📋 Copy All JSON';
+  cpb.style.cssText='background:linear-gradient(135deg,#4fc3f7,#00b4d8);border:none;border-radius:10px;color:#000;font-weight:700;font-size:15px;padding:13px;cursor:pointer;flex-shrink:0';
+  cpb.onclick=()=>{ ta.select(); ta.setSelectionRange(0,99999); if(navigator.clipboard?.writeText) navigator.clipboard.writeText(ta.value).then(()=>toast('Copied ✓')); else{ try{ document.execCommand('copy'); toast('Copied ✓'); }catch(e){} } };
+  o.appendChild(hdr); o.appendChild(ta); o.appendChild(cpb); document.body.appendChild(o);
+}
+
+// ================================================================
+// NAVIGATION
+// ================================================================
+function navTo(page,btn){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  showPage(page);
+  document.getElementById('back-btn').classList.add('hidden');
+  document.getElementById('tb-title').textContent='ICU HEART';
+}
+
+function showPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pg-'+page)?.classList.add('active');
+  document.getElementById('pages').scrollTop=0;
+}
+
+function goBack(){
+  navTo('patients', document.getElementById('nb-patients'));
+}
+
+function switchDetailTab(id){
+  ['feed','update','msg','assess'].forEach(t=>{
+    document.getElementById('dt-'+t).classList.remove('active');
+    document.getElementById('dc-'+t).classList.remove('active');
+  });
+  document.getElementById('dt-'+id).classList.add('active');
+  document.getElementById('dc-'+id).classList.add('active');
+}
+
+// ================================================================
+// UTILS
+// ================================================================
+function renderTime(ts){
+  if(!ts) return '';
+  const d=new Date(ts);
+  return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')} น. ${d.getDate()}/${d.getMonth()+1}`;
+}
+
+function showModal(html){ document.getElementById('modal-body').innerHTML=html; document.getElementById('modal-ov').classList.remove('hidden'); }
+function closeModal(){ document.getElementById('modal-ov').classList.add('hidden'); }
+
+function showProfile(){
+  const user=S.user; if(!user) return;
+  const photo=user.photoURL?`<img src="${user.photoURL}" style="width:64px;height:64px;border-radius:50%;margin-bottom:.8rem">`:'<div style="font-size:3.5rem">👩‍⚕️</div>';
+  showModal(`<div style="text-align:center;padding:.5rem">
+    ${photo}
+    <div style="font-family:'Prompt',sans-serif;font-size:1.1rem;font-weight:600;color:#fff;margin:.3rem 0">${user.displayName||''}</div>
+    <div style="font-size:.82rem;color:var(--muted);margin-bottom:.3rem">${user.email||''}</div>
+    <div style="font-size:.75rem;color:var(--blue)">${S.role==='admin'?'👑 Admin':'👤 พยาบาล'}</div>
+    <button onclick="closeModal();doSignOut()" style="margin-top:1.2rem;width:100%;padding:.85rem;border-radius:12px;background:rgba(255,107,157,.1);border:1px solid rgba(255,107,157,.25);color:var(--rose);font-size:.9rem;cursor:pointer;font-family:'Sarabun',sans-serif">🚪 ออกจากระบบ</button>
+  </div>`);
+}
+
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className=`toast${type==='err'?' err':''}`;
+  el.classList.remove('hidden');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.add('hidden'),3000);
+}
+</script>
+</body>
+</html>
